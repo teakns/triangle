@@ -469,6 +469,28 @@
   .answer-btn.correct{background:var(--good); border-color:var(--good); color:#fff;}
   .answer-btn.wrong{background:var(--warn); border-color:var(--warn); color:#fff;}
 
+  .review-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
+    gap:16px;
+    margin-top:24px;
+  }
+  .review-card{
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+  }
+  .review-card.ok{border-color:var(--good);}
+  .review-card.bad{border-color:var(--warn);}
+  .review-head{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:4px;}
+  .review-badge{font-weight:700;font-size:13px;}
+  .review-card.ok .review-badge{color:var(--good);}
+  .review-card.bad .review-badge{color:var(--warn);}
+  .review-card svg{width:100%;height:auto;display:block;}
+  .review-info{font-size:13.5px;line-height:1.6;margin-top:6px;}
+  .review-nums{font-size:12.5px;color:var(--sub);line-height:1.6;margin-top:4px;}
+
   /* ---------- page 2: gallery (unchanged) ---------- */
   section.group{margin-bottom:44px;}
   .group-head{
@@ -865,8 +887,12 @@
       <div class="game-start-title" id="cgSummaryTitle">결과</div>
       <div class="game-start-desc" id="cgSummaryDesc"></div>
       <div class="summary-list" id="cgSummaryList"></div>
-      <button class="btn" id="classifyGameRestartBtn">🔄 다시 도전하기</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn ghost" id="cgReviewBtn">🔍 오답확인</button>
+        <button class="btn" id="classifyGameRestartBtn">🔄 다시 도전하기</button>
+      </div>
     </div>
+    <div class="review-grid" id="cgReviewGrid" style="display:none"></div>
   </div>
 </div>
 
@@ -2220,21 +2246,60 @@
     return `<path d="M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 ${sweep} ${p2[0]} ${p2[1]}" stroke="${color}" stroke-width="3" fill="none"/>`;
   }
 
-  function buildCardSVG(angles, showColor){
+  function toward(from,to,dist){
+    const dx=to[0]-from[0], dy=to[1]-from[1];
+    const len=Math.hypot(dx,dy)||1;
+    return [from[0]+dx/len*dist, from[1]+dy/len*dist];
+  }
+
+  function makeGeometry(angles){
     const [A,B,C] = angles;
     let pts = trianglePoints(A,B,C, rnd(110,150));
     pts = rotatePoints(pts, rnd(0,360));
-    pts = fitFill(pts);
+    return fitFill(pts);
+  }
+
+  function buildCardSVG(q, showColor){
+    const pts = q.pts, degs = q.angles;
     const poly = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="#EFEAE0" stroke="#2B281F" stroke-width="2.8"/>`;
     let marks = '';
     if(showColor){
-      const degs = [A,B,C];
       pts.forEach((v,i)=>{
         const n1 = pts[(i+1)%3], n2 = pts[(i+2)%3];
         marks += angleMarkSVG(v, n1, n2, angleKind(degs[i]));
       });
     }
     return `${poly}${marks}`;
+  }
+
+  const CM_PX = 20; // 20 px = 1 cm (for the review screen)
+  function sideLengthsCm(pts){
+    return [0,1,2].map(i=>{
+      const a = pts[i], b = pts[(i+1)%3];
+      return Math.hypot(a[0]-b[0], a[1]-b[1]) / CM_PX;
+    });
+  }
+
+  function buildReviewSVG(q){
+    const pts = q.pts, degs = q.angles;
+    const centroid = centroidOf(pts);
+    let out = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="#EFEAE0" stroke="#2B281F" stroke-width="2.8"/>`;
+    pts.forEach((v,i)=>{
+      const n1 = pts[(i+1)%3], n2 = pts[(i+2)%3];
+      const kind = angleKind(degs[i]);
+      out += angleMarkSVG(v, n1, n2, kind);
+      const pos = toward(v, centroid, 40);
+      out += `<text x="${pos[0]}" y="${pos[1]}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="${ANGLE_COLOR[kind]}">${Math.round(degs[i])}°</text>`;
+    });
+    const lens = sideLengthsCm(pts);
+    for(let i=0;i<3;i++){
+      const a = pts[i], b = pts[(i+1)%3];
+      const mid = [(a[0]+b[0])/2, (a[1]+b[1])/2];
+      const d = Math.hypot(mid[0]-centroid[0], mid[1]-centroid[1]);
+      const pos = toward(centroid, mid, d+15);
+      out += `<text x="${pos[0]}" y="${pos[1]}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="500" fill="#2B281F">${lens[i].toFixed(1)}cm</text>`;
+    }
+    return `<svg viewBox="-26 -26 292 292">${out}</svg>`;
   }
 
   function makeQuizPlan(){
@@ -2247,7 +2312,7 @@
 
   function renderCurrentTriangle(){
     const q = questions[qIndex];
-    quizSvg.innerHTML = buildCardSVG(q.angles, colorToggle.checked);
+    quizSvg.innerHTML = buildCardSVG(q, colorToggle.checked);
   }
   colorToggle.addEventListener('change', ()=>{
     if(playScreen.style.display !== 'none' && questions[qIndex]) renderCurrentTriangle();
@@ -2291,7 +2356,7 @@
     locked = true;
     const correctCat = questions[qIndex].category;
     markButtons(null, correctCat);
-    results.push({ q:qIndex+1, category:correctCat, success:false });
+    results.push({ q:qIndex+1, category:correctCat, success:false, selected:null });
     statusBox.classList.remove('state-ok'); statusBox.classList.add('state-bad');
     statusTitle.textContent = `시간 종료! 정답은 ${NAMES[correctCat]}이에요.`;
     setTimeout(nextQuestion, 1300);
@@ -2305,7 +2370,7 @@
     const isCorrect = ans===correctCat;
     markButtons(ans, correctCat);
     if(isCorrect) score++;
-    results.push({ q:qIndex+1, category:correctCat, success:isCorrect });
+    results.push({ q:qIndex+1, category:correctCat, success:isCorrect, selected:ans });
     statusBox.classList.remove('state-ok','state-bad');
     statusBox.classList.add(isCorrect?'state-ok':'state-bad');
     statusTitle.textContent = isCorrect ? '정답이에요!' : `아쉬워요! 정답은 ${NAMES[correctCat]}이에요.`;
@@ -2338,11 +2403,31 @@
       const mark = r.success ? '<span class="mark-ok">성공</span>' : '<span class="mark-bad">실패</span>';
       return `<div class="summary-item"><span>문제 ${r.q} · ${NAMES[r.category]}</span>${mark}</div>`;
     }).join('');
+
+    const grid = document.getElementById('cgReviewGrid');
+    grid.innerHTML = results.map(r=>{
+      const q = questions[r.q-1];
+      const lens = sideLengthsCm(q.pts);
+      const degTxt = q.angles.map(d=>Math.round(d)+'°').join(' · ');
+      const lenTxt = lens.map(l=>l.toFixed(1)).join(' · ');
+      const mine = r.selected ? NAMES[r.selected] : '시간 초과 (선택 못 함)';
+      return `<div class="review-card ${r.success?'ok':'bad'}">
+        <div class="review-head"><b>문제 ${r.q}</b><span class="review-badge">${r.success?'성공':'실패'}</span></div>
+        ${buildReviewSVG(q)}
+        <div class="review-info">정답: <b>${NAMES[r.category]}</b><br>내 답: ${mine}</div>
+        <div class="review-nums">세 각: ${degTxt}<br>세 변: ${lenTxt}cm</div>
+      </div>`;
+    }).join('');
+    grid.style.display = 'none';
+    document.getElementById('cgReviewBtn').textContent = '🔍 오답확인';
   }
 
   function startGame(){
     qIndex = 0; score = 0; results = [];
-    questions = makeQuizPlan().map(cat=>({ category:cat, angles: randAngles(cat) }));
+    questions = makeQuizPlan().map(cat=>{
+      const angles = randAngles(cat);
+      return { category:cat, angles, pts: makeGeometry(angles) };
+    });
     startScreen.style.display = 'none';
     summaryScreen.style.display = 'none';
     playScreen.style.display = '';
@@ -2353,6 +2438,12 @@
   document.getElementById('classifyGameRestartBtn').addEventListener('click', ()=>{
     summaryScreen.style.display = 'none';
     startScreen.style.display = '';
+  });
+  document.getElementById('cgReviewBtn').addEventListener('click', ()=>{
+    const grid = document.getElementById('cgReviewGrid');
+    const open = grid.style.display === 'none';
+    grid.style.display = open ? '' : 'none';
+    document.getElementById('cgReviewBtn').textContent = open ? '🔍 오답확인 닫기' : '🔍 오답확인';
   });
 })();
 </script>
