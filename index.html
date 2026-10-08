@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이등변삼각형·정삼각형 탐구</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF6EC;
+    --grid:#E4DCC8;
+    --ink:#2B281F;
+    --sub:#6B6353;
+    --iso:#2E6B85;
+    --iso-fill-a:#EAF2F4;
+    --iso-fill-b:#DDEBEF;
+    --equi:#B15A2E;
+    --equi-fill-a:#F7EBDF;
+    --equi-fill-b:#F2E0CC;
+    --card:#FFFFFF;
+    --line:#CFC6AE;
+    --good:#2E7D4F;
+    --good-bg:#E8F3EC;
+    --warn:#B14A2E;
+    --warn-bg:#F7E9E3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--ink);
+    font-family:'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    padding:0 20px 90px;
+  }
+  .wrap{max-width:980px;margin:0 auto;}
+
+  /* ---------- tab bar ---------- */
+  .tabbar{
+    max-width:980px;
+    margin:0 auto;
+    display:flex;
+    gap:8px;
+    padding:22px 0 0;
+    position:sticky;
+    top:0;
+    background:var(--paper);
+    z-index:5;
+  }
+  .tab-btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background:var(--card);
+    color:var(--sub);
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    padding:10px 18px;
+    border-radius:9px 9px 0 0;
+    cursor:pointer;
+    border-bottom:none;
+    position:relative;
+    top:1px;
+  }
+  .tab-btn.active{
+    color:var(--ink);
+    background:var(--paper);
+    border-color:var(--ink);
+    font-weight:700;
+  }
+  .tabbar::after{
+    content:"";
+    position:absolute;
+  }
+
+  header{margin:24px 0 0;}
+  h1{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-weight:700;
+    font-size:clamp(24px,4vw,32px);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    max-width:64ch;
+    color:var(--sub);
+    line-height:1.65;
+    font-size:15px;
+  }
+
+  .page{padding-top:8px;}
+
+  /* ---------- shared controls ---------- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:18px;
+    margin:22px 0 30px;
+    padding:14px 18px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .btn{
+    appearance:none;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    padding:9px 16px;
+    border-radius:7px;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+  .btn.ghost{background:transparent;color:var(--ink);}
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    user-select:none;
+  }
+  .toggle input{width:16px;height:16px;accent-color:var(--iso);}
+
+  /* ---------- page 1: drawing ---------- */
+  .mode-switch{
+    display:inline-flex;
+    border:1px solid var(--ink);
+    border-radius:9px;
+    overflow:hidden;
+  }
+  .mode-switch button{
+    appearance:none;
+    border:none;
+    background:var(--card);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:14px;
+    font-weight:500;
+    padding:9px 16px;
+    cursor:pointer;
+  }
+  .mode-switch button + button{border-left:1px solid var(--ink);}
+  .mode-switch button.active{background:var(--ink);color:#fff;}
+
+  .draw-layout{
+    display:flex;
+    gap:24px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .canvas-box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    flex:1 1 420px;
+    max-width:560px;
+  }
+  .canvas-box svg{
+    width:100%;
+    height:auto;
+    display:block;
+    cursor:crosshair;
+    touch-action:none;
+  }
+  .grid-dot{fill:#C7BEA4;}
+  .grid-dot:hover{fill:var(--ink);}
+  .draw-point{fill:var(--ink);stroke:#fff;stroke-width:2;}
+  .draw-line{stroke:var(--ink);stroke-width:2.5;}
+  .draw-fill{fill-opacity:0.18;}
+  .draw-fill.ok{fill:var(--good);}
+  .draw-fill.bad{fill:var(--warn);}
+  .draw-fill.pending{fill:none;}
+  .side-len-label{
+    font-size:12px;
+    font-weight:700;
+    text-anchor:middle;
+    fill:var(--ink);
+  }
+
+  .side-panel{
+    flex:1 1 260px;
+    min-width:240px;
+  }
+  .status-box{
+    border-radius:10px;
+    padding:16px 18px;
+    font-size:14.5px;
+    line-height:1.7;
+    border:1px solid var(--line);
+    background:var(--card);
+    min-height:110px;
+  }
+  .status-box.state-ok{background:var(--good-bg);border-color:var(--good);color:#1E5236;}
+  .status-box.state-bad{background:var(--warn-bg);border-color:var(--warn);color:#7A3018;}
+  .status-title{font-weight:700;font-size:15.5px;margin-bottom:6px;}
+  .side-list{
+    margin-top:10px;
+    font-size:13.5px;
+    color:var(--sub);
+  }
+  .draw-actions{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  /* ---------- page 3: timed game ---------- */
+  .game-wrap{margin-top:26px;}
+  .game-start-card{
+    max-width:480px;
+    margin:20px auto 0;
+    text-align:center;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:36px 28px;
+  }
+  .game-start-title{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-size:22px;
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .game-start-desc{
+    color:var(--sub);
+    font-size:14.5px;
+    line-height:1.7;
+    margin-bottom:22px;
+  }
+  .game-hud{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+    padding:14px 18px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+  }
+  .game-round{font-size:14px;color:var(--sub);font-weight:500;white-space:nowrap;}
+  .game-target{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-size:19px;
+    font-weight:700;
+    color:var(--iso);
+    white-space:nowrap;
+  }
+  .game-target.equi{color:var(--equi);}
+  .game-timer{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex:1 1 160px;
+    min-width:140px;
+  }
+  .timer-bar-track{
+    flex:1;
+    height:10px;
+    border-radius:6px;
+    background:var(--grid);
+    overflow:hidden;
+  }
+  .timer-bar-fill{
+    height:100%;
+    width:100%;
+    background:var(--iso);
+    border-radius:6px;
+    transition:width .1s linear, background .2s ease;
+  }
+  .timer-bar-fill.urgent{background:var(--warn);}
+  .timer-num{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-weight:700;
+    font-size:20px;
+    width:28px;
+    text-align:right;
+  }
+  .summary-list{
+    text-align:left;
+    margin-bottom:22px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .summary-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:9px 14px;
+    border-radius:8px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    font-size:14px;
+  }
+  .summary-item .mark-ok{color:var(--good);font-weight:700;}
+  .summary-item .mark-bad{color:var(--warn);font-weight:700;}
+
+  /* ---------- page 4: classify by angle ---------- */
+  :root{
+    --acute:#2F7A55;
+    --acute-bg:#E7F2EC;
+    --right:#2C5C99;
+    --right-bg:#E7EDF6;
+    --obtuse:#9B4B86;
+    --obtuse-bg:#F4E7F1;
+  }
+  .classify-progress{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .classify-progress .prog-text{font-size:14px;color:var(--sub);font-weight:500;}
+  .tray{
+    margin:22px 0 30px;
+    padding:20px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px;
+    min-height:150px;
+  }
+  .tray-empty-hint{
+    color:var(--sub);
+    font-size:14px;
+    margin:auto;
+  }
+  .tri-card{
+    width:170px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:8px;
+    cursor:grab;
+    touch-action:none;
+    user-select:none;
+    flex:0 0 auto;
+    transition:box-shadow .15s ease, border-color .2s ease;
+  }
+  .tri-card svg{width:100%;height:auto;display:block;pointer-events:none;}
+  .tri-card.dragging{
+    cursor:grabbing;
+    box-shadow:0 10px 24px rgba(0,0,0,.18);
+  }
+  .tri-card.flash-ok{border-color:var(--good); box-shadow:0 0 0 3px var(--good-bg);}
+  .tri-card.flash-bad{border-color:var(--warn); box-shadow:0 0 0 3px var(--warn-bg); animation:shake .4s ease;}
+  .tri-card.placed-correct{cursor:default;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+  .zones{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px,1fr));
+    gap:18px;
+  }
+  .zone{
+    border-radius:12px;
+    padding:14px;
+    border:2px dashed var(--line);
+    min-height:200px;
+    display:flex;
+    flex-direction:column;
+  }
+  .zone-head{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-weight:700;
+    font-size:17px;
+    margin-bottom:12px;
+  }
+  .zone.acute{border-color:var(--acute); background:var(--acute-bg);}
+  .zone.acute .zone-head{color:var(--acute);}
+  .zone.right{border-color:var(--right); background:var(--right-bg);}
+  .zone.right .zone-head{color:var(--right);}
+  .zone.obtuse{border-color:var(--obtuse); background:var(--obtuse-bg);}
+  .zone.obtuse .zone-head{color:var(--obtuse);}
+  .zone-cards{
+    flex:1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-content:flex-start;
+  }
+  .angle-tag{
+    font-size:11px;
+    font-family:'Noto Sans KR', sans-serif;
+    text-anchor:middle;
+    dominant-baseline:middle;
+    font-weight:700;
+    display:none;
+  }
+  body.show-classify-angles .angle-tag{display:block;}
+  .angle-color-arc{display:none;}
+  body.show-angle-color .angle-color-arc{display:block;}
+  .classify-complete{
+    margin-top:20px;
+    padding:16px 18px;
+    border-radius:10px;
+    background:var(--good-bg);
+    border:1px solid var(--good);
+    color:#1E5236;
+    font-size:15px;
+    font-weight:500;
+    display:none;
+  }
+  .classify-complete.show{display:block;}
+
+  /* ---------- page 7: angle quiz ---------- */
+  .quiz-layout{
+    display:flex;
+    gap:26px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .quiz-canvas-box{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    width:240px;
+    flex:0 0 auto;
+  }
+  .quiz-canvas-box svg{width:100%;height:auto;display:block;}
+  .quiz-answers{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    min-width:220px;
+    flex:1 1 220px;
+  }
+  .answer-btn{
+    appearance:none;
+    border:1px solid var(--ink);
+    background:var(--card);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:15px;
+    font-weight:500;
+    padding:13px 16px;
+    border-radius:9px;
+    cursor:pointer;
+    transition:transform .12s ease, background .15s ease, color .15s ease;
+  }
+  .answer-btn:hover:not(:disabled){transform:translateY(-1px);}
+  .answer-btn:disabled{cursor:default;}
+  .answer-btn.correct{background:var(--good); border-color:var(--good); color:#fff;}
+  .answer-btn.wrong{background:var(--warn); border-color:var(--warn); color:#fff;}
+
+  .review-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
+    gap:16px;
+    margin-top:24px;
+  }
+  .review-card{
+    background:var(--card);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+  }
+  .review-card.ok{border-color:var(--good);}
+  .review-card.bad{border-color:var(--warn);}
+  .review-head{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:4px;}
+  .review-badge{font-weight:700;font-size:13px;}
+  .review-card.ok .review-badge{color:var(--good);}
+  .review-card.bad .review-badge{color:var(--warn);}
+  .review-card svg{width:100%;height:auto;display:block;}
+  .review-info{font-size:13.5px;line-height:1.6;margin-top:6px;}
+  .review-nums{font-size:12.5px;color:var(--sub);line-height:1.6;margin-top:4px;}
+
+  /* ---------- page 2: gallery (unchanged) ---------- */
+  section.group{margin-bottom:44px;}
+  .group-head{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:6px;
+    padding-bottom:8px;
+    border-bottom:2px solid currentColor;
+  }
+  .group-head.iso-head{color:var(--iso);}
+  .group-head.equi-head{color:var(--equi);}
+  .group-head h2{
+    font-family:'Noto Serif KR', Georgia, serif;
+    font-size:20px;
+    font-weight:700;
+    margin:0;
+  }
+  .group-head span.count{font-size:13px;color:var(--sub);}
+
+  .grid{
+    margin-top:16px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+    gap:20px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px;
+    animation:pop .38s ease both;
+  }
+  @keyframes pop{
+    from{opacity:0; transform:scale(.94) translateY(6px);}
+    to{opacity:1; transform:scale(1) translateY(0);}
+  }
+  .card svg{width:100%;height:auto;display:block;}
+
+  .tri-fill.iso-a{fill:var(--iso-fill-a);}
+  .tri-fill.iso-b{fill:var(--iso-fill-b);}
+  .tri-fill.equi-a{fill:var(--equi-fill-a);}
+  .tri-fill.equi-b{fill:var(--equi-fill-b);}
+  .tri-stroke.iso{stroke:var(--iso);}
+  .tri-stroke.equi{stroke:var(--equi);}
+  .tri-stroke{stroke-width:3;fill-opacity:1;}
+
+  .tick{stroke-width:3;}
+  .tick.iso{stroke:var(--iso);}
+  .tick.equi{stroke:var(--equi);}
+
+  .angle-arc{stroke-width:1.8;}
+  .angle-arc.iso{stroke:var(--iso);}
+  .angle-arc.equi{stroke:var(--equi);}
+
+  .side-label, .angle-label{
+    font-size:15px;
+    font-family:'Noto Sans KR', sans-serif;
+    text-anchor:middle;
+    dominant-baseline:middle;
+    display:none;
+  }
+  .side-label{font-weight:500;}
+  .side-label.iso{fill:var(--iso);}
+  .side-label.equi{fill:var(--equi);}
+  .angle-label{font-weight:700;}
+  .angle-label.iso{fill:var(--iso);}
+  .angle-label.equi{fill:var(--equi);}
+
+  body.show-lengths .side-label{display:block;}
+  body.show-angles .angle-label{display:block;}
+
+  .hint-box{
+    margin-top:14px;
+    border:1px dashed var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    background:var(--card);
+  }
+  .hint-box button.btn{background:transparent;color:var(--ink);border-color:var(--ink);}
+  .hint-content{display:none;margin-top:12px;font-size:14.5px;line-height:1.8;color:var(--ink);}
+  .hint-content.open{display:block;}
+  .hint-content b{color:var(--iso);}
+  .hint-content b.equi{color:var(--equi);}
+
+  footer{margin-top:40px;font-size:12.5px;color:var(--sub);text-align:center;}
+
+  @media (prefers-reduced-motion: reduce){.card{animation:none;}}
+</style>
+</head>
+<body>
+
+<div class="tabbar">
+  <button class="tab-btn active" data-page="1">1. 삼각형 그리기</button>
+  <button class="tab-btn" data-page="2">2. 삼각형 탐구</button>
+  <button class="tab-btn" data-page="3">3. 시간 안에 그리기 게임</button>
+  <button class="tab-btn" data-page="4">4. 삼각형 분류하기</button>
+  <button class="tab-btn" data-page="5">5. 예각·직각·둔각 그리기</button>
+  <button class="tab-btn" data-page="6">6. 각 그리기 게임</button>
+  <button class="tab-btn" data-page="7">7. 각 맞히기 게임</button>
+</div>
+
+<div class="wrap">
+
+<!-- ================= PAGE 1 : DRAW ================= -->
+<div class="page" id="page-1">
+  <header>
+    <h1>점을 찍어 삼각형을 그려보세요</h1>
+    <p>모눈종이 위에 점 3개를 순서대로 찍으면 삼각형이 만들어져요. 이등변삼각형은 <b>정사각형 모눈</b>에서, 정삼각형은 <b>삼각형 모눈</b>에서 그리면 훨씬 쉬워요.</p>
+  </header>
+
+  <div class="controls">
+    <div class="mode-switch">
+      <button id="modeIso" class="active">이등변삼각형 그리기</button>
+      <button id="modeEqui">정삼각형 그리기</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="chkDrawLen" checked> 변의 길이(칸 수) 표시</label>
+  </div>
+
+  <div class="draw-layout">
+    <div class="canvas-box">
+      <svg id="drawSvg" viewBox="0 0 520 520"></svg>
+    </div>
+
+    <div class="side-panel">
+      <div class="status-box" id="statusBox">
+        <div class="status-title" id="statusTitle">점을 3개 찍어보세요</div>
+        <div id="statusBody">지금은 <b id="modeNameInline">이등변삼각형</b> 모드예요. 모눈의 점을 클릭해서 꼭짓점 3개를 정해보세요.</div>
+        <div class="side-list" id="sideList"></div>
+      </div>
+      <div class="draw-actions">
+        <button class="btn ghost" id="undoBtn">↩ 마지막 점 지우기</button>
+        <button class="btn ghost" id="clearBtn">🗑 모두 지우기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAGE 2 : GALLERY ================= -->
+<div class="page" id="page-2" style="display:none">
+  <header>
+    <h1>이등변삼각형과 정삼각형, 무엇이 같을까?</h1>
+    <p>아래에는 서로 다른 크기와 방향으로 놓인 삼각형들이 있어요. 먼저 도형의 <b>모양</b>만 보고 두 그룹 각각의 공통점을 찾아본 다음, 변의 길이와 각의 크기를 켜서 확인해 보세요.</p>
+  </header>
+
+  <div class="controls">
+    <button class="btn" id="redraw">🔄 다시 그리기</button>
+    <label class="toggle"><input type="checkbox" id="chkLen"> 변의 길이 표시</label>
+    <label class="toggle"><input type="checkbox" id="chkAng"> 각의 크기 표시</label>
+  </div>
+
+  <section class="group">
+    <div class="group-head iso-head">
+      <h2>이등변삼각형</h2>
+      <span class="count">6개 — 크기와 방향이 모두 다름</span>
+    </div>
+    <div class="grid" id="isoGrid"></div>
+  </section>
+
+  <section class="group">
+    <div class="group-head equi-head">
+      <h2>정삼각형</h2>
+      <span class="count">6개 — 크기와 방향이 모두 다름</span>
+    </div>
+    <div class="grid" id="equiGrid"></div>
+  </section>
+
+  <div class="hint-box">
+    <button class="btn" id="hintBtn">💡 공통점 확인하기</button>
+    <div class="hint-content" id="hintContent">
+      <div><b>이등변삼각형</b>: 두 변의 길이가 서로 같고, 그 두 변이 만드는 밑각 두 개의 크기도 서로 같습니다. (세 변이 모두 같을 필요는 없어요.)</div>
+      <div style="margin-top:8px;"><b class="equi">정삼각형</b>: 세 변의 길이가 모두 같고, 세 각의 크기도 모두 60°로 같습니다. (정삼각형은 이등변삼각형의 특별한 경우예요!)</div>
+    </div>
+  </div>
+
+  <footer>도형을 돌려도, 크기를 바꿔도 변하지 않는 성질을 찾는 것이 핵심이에요.</footer>
+</div>
+
+<!-- ================= PAGE 3 : TIMED GAME ================= -->
+<div class="page" id="page-3" style="display:none">
+  <header>
+    <h1>13초 안에 그릴 수 있나요?</h1>
+    <p>문제마다 이등변삼각형 또는 정삼각형이 제시돼요. 시간이 줄어들기 전에 알맞은 모눈에 점 3개를 찍어 완성하세요. 총 5문제예요.</p>
+  </header>
+
+  <div class="game-wrap" id="gameStartScreen">
+    <div class="game-start-card">
+      <div class="game-start-title">준비되면 시작하세요</div>
+      <div class="game-start-desc">문제 5개, 문제당 제한 시간 13초. 이등변삼각형 문제는 정사각형 모눈에, 정삼각형 문제는 삼각형 모눈에 그리게 돼요.</div>
+      <button class="btn" id="gameStartBtn">▶ 게임 시작</button>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="gamePlayScreen" style="display:none">
+    <div class="game-hud">
+      <div class="game-round" id="gameRoundLabel">문제 1 / 5</div>
+      <div class="game-target" id="gameTargetLabel">이등변삼각형</div>
+      <div class="game-timer">
+        <div class="timer-bar-track"><div class="timer-bar-fill" id="timerBarFill"></div></div>
+        <div class="timer-num" id="timerNum">13</div>
+      </div>
+    </div>
+
+    <div class="draw-layout">
+      <div class="canvas-box">
+        <svg id="gameSvg" viewBox="0 0 520 520"></svg>
+      </div>
+      <div class="side-panel">
+        <div class="status-box" id="gameStatusBox">
+          <div class="status-title" id="gameStatusTitle">점 3개를 찍어 도형을 완성하세요</div>
+          <div id="gameStatusBody">모눈의 점을 클릭해서 꼭짓점을 찍어보세요.</div>
+        </div>
+        <div class="draw-actions">
+          <button class="btn ghost" id="gameClearBtn">🗑 다시 그리기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="gameSummaryScreen" style="display:none">
+    <div class="game-start-card">
+      <div class="game-start-title" id="summaryTitle">결과</div>
+      <div class="game-start-desc" id="summaryScore"></div>
+      <div class="summary-list" id="summaryList"></div>
+      <button class="btn" id="gameRestartBtn">🔄 다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAGE 4 : CLASSIFY BY ANGLE ================= -->
+<div class="page" id="page-4" style="display:none">
+  <header>
+    <h1>예각삼각형 · 직각삼각형 · 둔각삼각형 분류하기</h1>
+    <p>삼각형 8개를 살펴보고, 알맞은 상자로 끌어다 놓아보세요. 가장 큰 각의 크기를 기준으로 생각하면 도움이 돼요.</p>
+  </header>
+
+  <div class="controls classify-progress">
+    <button class="btn" id="classifyResetBtn">🔄 새 문제로 다시하기</button>
+    <label class="toggle"><input type="checkbox" id="chkClassifyAngles"> 각의 크기 표시</label>
+    <label class="toggle"><input type="checkbox" id="chkAngleColor"> 각의 색깔 표시</label>
+    <span class="prog-text" id="classifyProgress">0 / 8개 분류 완료</span>
+  </div>
+
+  <div class="tray" id="triTray"></div>
+
+  <div class="zones">
+    <div class="zone acute" data-key="acute">
+      <div class="zone-head">예각삼각형</div>
+      <div class="zone-cards" id="zoneAcute"></div>
+    </div>
+    <div class="zone right" data-key="right">
+      <div class="zone-head">직각삼각형</div>
+      <div class="zone-cards" id="zoneRight"></div>
+    </div>
+    <div class="zone obtuse" data-key="obtuse">
+      <div class="zone-head">둔각삼각형</div>
+      <div class="zone-cards" id="zoneObtuse"></div>
+    </div>
+  </div>
+
+  <div class="classify-complete" id="classifyComplete">🎉 8개 삼각형을 모두 알맞게 분류했어요!</div>
+</div>
+
+<!-- ================= PAGE 5 : DRAW ACUTE/RIGHT/OBTUSE ================= -->
+<div class="page" id="page-5" style="display:none">
+  <header>
+    <h1>예각삼각형·직각삼각형·둔각삼각형을 그려보세요</h1>
+    <p>정사각형 모눈 위에 점 3개를 찍어 삼각형을 완성해 보세요. 가장 큰 각이 90°보다 작은지, 같은지, 큰지를 생각하며 그려보세요.</p>
+  </header>
+
+  <div class="controls">
+    <div class="mode-switch">
+      <button id="mode5Acute" class="active">예각삼각형 그리기</button>
+      <button id="mode5Right">직각삼각형 그리기</button>
+      <button id="mode5Obtuse">둔각삼각형 그리기</button>
+    </div>
+    <label class="toggle"><input type="checkbox" id="chkAngleColor5"> 각의 색깔 표시</label>
+  </div>
+
+  <div class="draw-layout">
+    <div class="canvas-box">
+      <svg id="drawSvg5" viewBox="0 0 520 520"></svg>
+    </div>
+    <div class="side-panel">
+      <div class="status-box" id="statusBox5">
+        <div class="status-title" id="statusTitle5">점을 3개 찍어보세요</div>
+        <div id="statusBody5">지금은 <b>예각삼각형</b> 모드예요. 모눈의 점을 클릭해서 꼭짓점 3개를 정해보세요.</div>
+        <div class="side-list" id="sideList5"></div>
+      </div>
+      <div class="draw-actions">
+        <button class="btn ghost" id="undoBtn5">↩ 마지막 점 지우기</button>
+        <button class="btn ghost" id="clearBtn5">🗑 모두 지우기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAGE 6 : TIMED GAME (acute/right/obtuse) ================= -->
+<div class="page" id="page-6" style="display:none">
+  <header>
+    <h1>13초 안에 그릴 수 있나요? (각으로 구분하기)</h1>
+    <p>문제마다 예각삼각형·직각삼각형·둔각삼각형 중 하나가 제시돼요. 5문제 동안 세 가지 종류가 적어도 한 번씩은 나와요.</p>
+  </header>
+
+  <div class="game-wrap" id="game6StartScreen">
+    <div class="game-start-card">
+      <div class="game-start-title">준비되면 시작하세요</div>
+      <div class="game-start-desc">문제 5개, 문제당 제한 시간 13초. 정사각형 모눈에 점 3개를 찍어 제시된 삼각형을 완성하세요.</div>
+      <button class="btn" id="game6StartBtn">▶ 게임 시작</button>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="game6PlayScreen" style="display:none">
+    <div class="game-hud">
+      <div class="game-round" id="game6RoundLabel">문제 1 / 5</div>
+      <div class="game-target" id="game6TargetLabel">예각삼각형</div>
+      <div class="game-timer">
+        <div class="timer-bar-track"><div class="timer-bar-fill" id="timer6BarFill"></div></div>
+        <div class="timer-num" id="timer6Num">13</div>
+      </div>
+    </div>
+
+    <div class="draw-layout">
+      <div class="canvas-box">
+        <svg id="game6Svg" viewBox="0 0 520 520"></svg>
+      </div>
+      <div class="side-panel">
+        <div class="status-box" id="game6StatusBox">
+          <div class="status-title" id="game6StatusTitle">점 3개를 찍어 도형을 완성하세요</div>
+          <div id="game6StatusBody">모눈의 점을 클릭해서 꼭짓점을 찍어보세요.</div>
+        </div>
+        <div class="draw-actions">
+          <button class="btn ghost" id="game6ClearBtn">🗑 다시 그리기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="game6SummaryScreen" style="display:none">
+    <div class="game-start-card">
+      <div class="game-start-title" id="summary6Title">결과</div>
+      <div class="game-start-desc" id="summary6Score"></div>
+      <div class="summary-list" id="summary6List"></div>
+      <button class="btn" id="game6RestartBtn">🔄 다시 도전하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PAGE 7 : ANGLE QUIZ GAME ================= -->
+<div class="page" id="page-7" style="display:none">
+  <header>
+    <h1>7초 안에 무슨 삼각형인지 맞혀보세요</h1>
+    <p>화면에 나오는 삼각형을 보고 예각삼각형·직각삼각형·둔각삼각형 중 하나를 선택하세요. 문제 8개, 문제당 제한 시간 7초예요.</p>
+  </header>
+
+  <div class="controls">
+    <label class="toggle"><input type="checkbox" id="chkCgAngleColor"> 각의 색깔 표시</label>
+  </div>
+
+  <div class="game-wrap" id="classifyGameStart">
+    <div class="game-start-card">
+      <div class="game-start-title">준비되면 시작하세요</div>
+      <div class="game-start-desc">문제 8개, 문제당 제한 시간 7초. 예각·직각·둔각삼각형이 골고루 나와요.</div>
+      <button class="btn" id="classifyGameStartBtn">▶ 게임 시작</button>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="classifyGamePlay" style="display:none">
+    <div class="game-hud">
+      <div class="game-round" id="cgRoundLabel">문제 1 / 8</div>
+      <div class="game-timer">
+        <div class="timer-bar-track"><div class="timer-bar-fill" id="cgTimerBarFill"></div></div>
+        <div class="timer-num" id="cgTimerNum">7</div>
+      </div>
+    </div>
+
+    <div class="quiz-layout">
+      <div class="quiz-canvas-box">
+        <svg id="cgQuizSvg" viewBox="0 0 240 240"></svg>
+      </div>
+      <div class="quiz-answers">
+        <button class="answer-btn" data-ans="acute">예각삼각형</button>
+        <button class="answer-btn" data-ans="right">직각삼각형</button>
+        <button class="answer-btn" data-ans="obtuse">둔각삼각형</button>
+        <div class="status-box" id="cgQuizStatus" style="margin-top:6px;">
+          <div class="status-title" id="cgQuizStatusTitle">보기 중 하나를 선택하세요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-wrap" id="classifyGameSummary" style="display:none">
+    <div class="game-start-card">
+      <div class="game-start-title" id="cgSummaryTitle">결과</div>
+      <div class="game-start-desc" id="cgSummaryDesc"></div>
+      <div class="summary-list" id="cgSummaryList"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn ghost" id="cgReviewBtn">🔍 오답확인</button>
+        <button class="btn" id="classifyGameRestartBtn">🔄 다시 도전하기</button>
+      </div>
+    </div>
+    <div class="review-grid" id="cgReviewGrid" style="display:none"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+(function(){
+  const tabs = document.querySelectorAll('.tab-btn');
+  const pages = {
+    '1': document.getElementById('page-1'),
+    '2': document.getElementById('page-2'),
+    '3': document.getElementById('page-3'),
+    '4': document.getElementById('page-4'),
+    '5': document.getElementById('page-5'),
+    '6': document.getElementById('page-6'),
+    '7': document.getElementById('page-7')
+  };
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabs.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.keys(pages).forEach(k=>{
+        pages[k].style.display = (k===btn.dataset.page) ? '' : 'none';
+      });
+    });
+  });
+})();
+
+/* ============================================================
+   PAGE 1 : CLICK-TO-DRAW TRIANGLE TOOL
+   ============================================================ */
+(function(){
+  const svg = document.getElementById('drawSvg');
+  const VB = 520;
+  const D = 44; // grid unit spacing (px in viewBox units)
+  const H = D*Math.sqrt(3)/2; // triangular grid row height
+
+  let mode = 'iso'; // 'iso' | 'equi'
+  let points = []; // array of [x,y] snapped points
+
+  function snap(x,y){
+    if(mode==='iso'){
+      const i = Math.round(x/D), j = Math.round(y/D);
+      return [i*D, j*D];
+    } else {
+      let j = Math.round(y/H);
+      let i = Math.round((x - j*D/2)/D);
+      return [i*D + j*D/2, j*H];
+    }
+  }
+
+  function svgPointFromEvent(evt){
+    const rect = svg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    const x = (clientX - rect.left) / rect.width * VB;
+    const y = (clientY - rect.top) / rect.height * VB;
+    return [x,y];
+  }
+
+  function buildGridDots(){
+    let dots = '';
+    if(mode==='iso'){
+      const cols = Math.floor(VB/D);
+      for(let i=0;i<=cols;i++){
+        for(let j=0;j<=cols;j++){
+          const x=i*D, y=j*D;
+          if(x<=VB && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+        }
+      }
+    } else {
+      const rows = Math.floor(VB/H);
+      for(let j=0;j<=rows;j++){
+        const offset = (j%2===0)?0:D/2;
+        const maxI = Math.ceil((VB-offset)/D);
+        for(let i=-1;i<=maxI;i++){
+          const x = i*D+offset, y=j*H;
+          if(x>=-1 && x<=VB+1 && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+        }
+      }
+    }
+    return dots;
+  }
+
+  function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+
+  function evaluate(){
+    const statusBox = document.getElementById('statusBox');
+    const statusTitle = document.getElementById('statusTitle');
+    const statusBody = document.getElementById('statusBody');
+    const sideList = document.getElementById('sideList');
+    statusBox.classList.remove('state-ok','state-bad');
+
+    if(points.length < 3){
+      statusTitle.textContent = `점 ${points.length}/3 찍음`;
+      statusBody.innerHTML = `모눈의 점을 클릭해서 나머지 꼭짓점을 찍어보세요.`;
+      sideList.innerHTML = '';
+      return;
+    }
+
+    const [p0,p1,p2] = points;
+    const area2 = (p1[0]-p0[0])*(p2[1]-p0[1]) - (p2[0]-p0[0])*(p1[1]-p0[1]);
+    const sides = [dist(p0,p1), dist(p1,p2), dist(p2,p0)];
+    const eps = 1.0;
+
+    if(Math.abs(area2) < D*3){
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '삼각형이 아니에요';
+      statusBody.innerHTML = '세 점이 한 직선 위에 있으면 삼각형이 만들어지지 않아요. 점을 다시 찍어보세요.';
+      sideList.innerHTML = '';
+      return;
+    }
+
+    const eq01 = Math.abs(sides[0]-sides[1])<eps;
+    const eq12 = Math.abs(sides[1]-sides[2])<eps;
+    const eq20 = Math.abs(sides[2]-sides[0])<eps;
+    const isIso = eq01||eq12||eq20;
+    const isEqui = eq01&&eq12&&eq20;
+
+    const unit = mode==='equi' ? D : D; // both grids share the same unit length
+    const cm = sides.map(s => (s/unit));
+    sideList.innerHTML = '세 변의 길이(칸 수): ' + cm.map(v=>v.toFixed(2)).join('칸, ') + '칸';
+
+    if(mode==='iso'){
+      if(isEqui){
+        statusBox.classList.add('state-ok');
+        statusTitle.textContent = '정삼각형이 만들어졌어요!';
+        statusBody.innerHTML = '세 변의 길이가 모두 같네요. 정삼각형은 이등변삼각형의 특별한 경우이기도 해요.';
+      } else if(isIso){
+        statusBox.classList.add('state-ok');
+        statusTitle.textContent = '이등변삼각형입니다!';
+        statusBody.innerHTML = '두 변의 길이가 서로 같아요. 잘 그렸어요.';
+      } else {
+        statusBox.classList.add('state-bad');
+        statusTitle.textContent = '아직 이등변삼각형이 아니에요';
+        statusBody.innerHTML = '세 변의 길이가 모두 달라요. 두 변의 길이가 같아지도록 점을 다시 찍어보세요.';
+      }
+    } else {
+      if(isEqui){
+        statusBox.classList.add('state-ok');
+        statusTitle.textContent = '정삼각형입니다!';
+        statusBody.innerHTML = '세 변의 길이가 모두 같아요. 완벽해요.';
+      } else {
+        statusBox.classList.add('state-bad');
+        statusTitle.textContent = '아직 정삼각형이 아니에요';
+        statusBody.innerHTML = '세 변의 길이가 아직 모두 같지 않아요. 삼각형 모눈의 점들을 이어 세 변이 같은 칸 수가 되도록 찍어보세요.';
+      }
+    }
+  }
+
+  function render(){
+    let html = buildGridDots();
+
+    if(points.length>=2){
+      const n = Math.min(points.length,3);
+      const polyPts = points.slice(0,n).map(p=>p.join(',')).join(' ');
+      let fillCls = 'pending';
+      if(points.length===3){
+        const [p0,p1,p2] = points;
+        const area2 = (p1[0]-p0[0])*(p2[1]-p0[1]) - (p2[0]-p0[0])*(p1[1]-p0[1]);
+        if(Math.abs(area2) >= D*3){
+          const sides=[dist(p0,p1),dist(p1,p2),dist(p2,p0)];
+          const eps=1.0;
+          const eq01=Math.abs(sides[0]-sides[1])<eps, eq12=Math.abs(sides[1]-sides[2])<eps, eq20=Math.abs(sides[2]-sides[0])<eps;
+          fillCls = (eq01||eq12||eq20) ? 'ok' : 'bad';
+        } else fillCls = 'bad';
+      }
+      const tag = points.length===3 ? 'polygon' : 'polyline';
+      html += `<${tag} points="${polyPts}" class="draw-fill ${fillCls}" style="stroke:none;"/>`;
+      html += `<${tag} points="${polyPts}" class="draw-line" fill="none"/>`;
+    }
+
+    points.forEach(p=>{ html += `<circle cx="${p[0]}" cy="${p[1]}" r="5.5" class="draw-point"/>`; });
+
+    if(points.length===3 && document.getElementById('chkDrawLen').checked){
+      const [p0,p1,p2] = points;
+      const pairs = [[p0,p1],[p1,p2],[p2,p0]];
+      pairs.forEach(([a,b])=>{
+        const len = dist(a,b)/D;
+        const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+        html += `<text x="${mx}" y="${my-6}" class="side-len-label">${len.toFixed(2)}</text>`;
+      });
+    }
+
+    svg.innerHTML = html;
+    evaluate();
+  }
+
+  function onGridClick(evt){
+    evt.preventDefault();
+    const [x,y] = svgPointFromEvent(evt);
+    const snapped = snap(x,y);
+    if(snapped[0]<0 || snapped[0]>VB || snapped[1]<0 || snapped[1]>VB) return;
+
+    if(points.length===3){ points = []; }
+
+    const last = points[points.length-1];
+    if(last && Math.abs(last[0]-snapped[0])<0.01 && Math.abs(last[1]-snapped[1])<0.01) return;
+
+    points.push(snapped);
+    render();
+  }
+
+  svg.addEventListener('click', onGridClick);
+  svg.addEventListener('touchstart', onGridClick, {passive:false});
+
+  document.getElementById('undoBtn').addEventListener('click', ()=>{ points.pop(); render(); });
+  document.getElementById('clearBtn').addEventListener('click', ()=>{ points = []; render(); });
+  document.getElementById('chkDrawLen').addEventListener('change', render);
+
+  const modeIsoBtn = document.getElementById('modeIso');
+  const modeEquiBtn = document.getElementById('modeEqui');
+  function setMode(newMode){
+    mode = newMode;
+    points = [];
+    modeIsoBtn.classList.toggle('active', mode==='iso');
+    modeEquiBtn.classList.toggle('active', mode==='equi');
+    document.getElementById('modeNameInline').textContent = mode==='iso' ? '이등변삼각형' : '정삼각형';
+    render();
+  }
+  modeIsoBtn.addEventListener('click', ()=>setMode('iso'));
+  modeEquiBtn.addEventListener('click', ()=>setMode('equi'));
+
+  render();
+})();
+
+/* ============================================================
+   PAGE 2 : GALLERY (variable size / rotation isosceles & equilateral)
+   ============================================================ */
+(function(){
+  const SCALE = 24;
+  const VB = 340;
+  const PAD = 40;
+
+  function rnd(min,max){ return Math.random()*(max-min)+min; }
+
+  function isoRawPoints(apexDeg, legPx){
+    const half = apexDeg/2 * Math.PI/180;
+    const bw = legPx*Math.sin(half);
+    const h  = legPx*Math.cos(half);
+    return [[0,-h],[-bw,0],[bw,0]];
+  }
+
+  function rotatePoints(pts, deg){
+    const rad = deg*Math.PI/180, c = Math.cos(rad), s = Math.sin(rad);
+    const cx = pts.reduce((a,p)=>a+p[0],0)/pts.length;
+    const cy = pts.reduce((a,p)=>a+p[1],0)/pts.length;
+    return pts.map(([x,y])=>{
+      const dx=x-cx, dy=y-cy;
+      return [cx+dx*c-dy*s, cy+dx*s+dy*c];
+    });
+  }
+
+  function fitPoints(pts){
+    const drawable = VB - PAD*2;
+    const xs = pts.map(p=>p[0]), ys = pts.map(p=>p[1]);
+    const minX=Math.min(...xs), maxX=Math.max(...xs);
+    const minY=Math.min(...ys), maxY=Math.max(...ys);
+    const w = maxX-minX, h = maxY-minY;
+    const scale = Math.min(drawable/w, drawable/h, 1);
+    const midX=(minX+maxX)/2, midY=(minY+maxY)/2;
+    const cx = VB/2, cy = VB/2;
+    return pts.map(([x,y])=>[ (x-midX)*scale+cx, (y-midY)*scale+cy ]);
+  }
+
+  function centroidOf(pts){
+    return [ pts.reduce((a,p)=>a+p[0],0)/pts.length, pts.reduce((a,p)=>a+p[1],0)/pts.length ];
+  }
+
+  function toward(from, to, dist){
+    const dx=to[0]-from[0], dy=to[1]-from[1];
+    const len=Math.hypot(dx,dy)||1;
+    return [from[0]+dx/len*dist, from[1]+dy/len*dist];
+  }
+
+  function tickMarkSVG(p1,p2,cls){
+    const midx=(p1[0]+p2[0])/2, midy=(p1[1]+p2[1])/2;
+    const dx=p2[0]-p1[0], dy=p2[1]-p1[1];
+    const len=Math.hypot(dx,dy);
+    const ux=dx/len, uy=dy/len;
+    const px=-uy, py=ux, t=9;
+    return `<line x1="${midx+px*t}" y1="${midy+py*t}" x2="${midx-px*t}" y2="${midy-py*t}" class="tick ${cls}"/>`;
+  }
+
+  function arcMarkSVG(vertex, n1, n2, cls){
+    const r=27;
+    const u1x=n1[0]-vertex[0], u1y=n1[1]-vertex[1], l1=Math.hypot(u1x,u1y);
+    const u2x=n2[0]-vertex[0], u2y=n2[1]-vertex[1], l2=Math.hypot(u2x,u2y);
+    const p1=[vertex[0]+u1x/l1*r, vertex[1]+u1y/l1*r];
+    const p2=[vertex[0]+u2x/l2*r, vertex[1]+u2y/l2*r];
+    const cross=(u1x/l1)*(u2y/l2)-(u1y/l1)*(u2x/l2);
+    const sweep = cross>0 ? 1 : 0;
+    return `<path d="M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 ${sweep} ${p2[0]} ${p2[1]}" class="angle-arc ${cls}" fill="none"/>`;
+  }
+
+  function cardSVG(type, params, idx){
+    const legPx = params.legCm*SCALE;
+    const apexDeg = type==='equi' ? 60 : params.apexDeg;
+    let pts = isoRawPoints(apexDeg, legPx);
+    pts = rotatePoints(pts, params.rotation);
+    pts = fitPoints(pts);
+    const [apex,left,right] = pts;
+    const centroid = centroidOf(pts);
+
+    const legCm = params.legCm;
+    const baseCm = 2*legCm*Math.sin(apexDeg/2*Math.PI/180);
+    const baseAngle = (180-apexDeg)/2;
+
+    const fillCls = type==='iso' ? (idx%2===0?'iso-a':'iso-b') : (idx%2===0?'equi-a':'equi-b');
+    const strokeCls = type==='iso' ? 'iso' : 'equi';
+    const tagCls = strokeCls;
+
+    const polygon = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" class="tri-fill ${fillCls} tri-stroke ${strokeCls}"/>`;
+
+    let ticks='', arcs='';
+    if(type==='iso'){
+      ticks += tickMarkSVG(apex,left,tagCls);
+      ticks += tickMarkSVG(apex,right,tagCls);
+      arcs  += arcMarkSVG(left, apex, right, tagCls);
+      arcs  += arcMarkSVG(right, apex, left, tagCls);
+    } else {
+      ticks += tickMarkSVG(apex,left,tagCls);
+      ticks += tickMarkSVG(apex,right,tagCls);
+      ticks += tickMarkSVG(left,right,tagCls);
+      arcs  += arcMarkSVG(apex, left, right, tagCls);
+      arcs  += arcMarkSVG(left, apex, right, tagCls);
+      arcs  += arcMarkSVG(right, apex, left, tagCls);
+    }
+
+    function sideLabel(p1,p2,cm){
+      const mid=[(p1[0]+p2[0])/2,(p1[1]+p2[1])/2];
+      const pos = toward(centroid, mid, Math.hypot(mid[0]-centroid[0],mid[1]-centroid[1])+20);
+      return `<text x="${pos[0]}" y="${pos[1]}" class="side-label ${tagCls}">${cm.toFixed(1)}cm</text>`;
+    }
+    function angleLabel(vertex, deg){
+      const pos = toward(vertex, centroid, 34);
+      return `<text x="${pos[0]}" y="${pos[1]}" class="angle-label ${tagCls}">${Math.round(deg)}°</text>`;
+    }
+
+    let labels = '';
+    labels += sideLabel(apex,left,legCm);
+    labels += sideLabel(apex,right,legCm);
+    labels += sideLabel(left,right, type==='equi'?legCm:baseCm);
+    labels += angleLabel(apex, apexDeg);
+    labels += angleLabel(left, baseAngle);
+    labels += angleLabel(right, baseAngle);
+
+    return `<svg viewBox="0 0 ${VB} ${VB}">${polygon}${ticks}${arcs}${labels}</svg>`;
+  }
+
+  function genIsoParams(){
+    let apexDeg;
+    do { apexDeg = rnd(34,122); } while(apexDeg>55 && apexDeg<65);
+    return { apexDeg, legCm: rnd(3.0,6.8), rotation: rnd(0,360) };
+  }
+  function genEquiParams(){
+    return { legCm: rnd(3.0,6.8), rotation: rnd(0,360) };
+  }
+
+  function renderAll(){
+    const isoGrid = document.getElementById('isoGrid');
+    const equiGrid = document.getElementById('equiGrid');
+    isoGrid.innerHTML = Array.from({length:6}).map((_,i)=>`<div class="card">${cardSVG('iso', genIsoParams(), i)}</div>`).join('');
+    equiGrid.innerHTML = Array.from({length:6}).map((_,i)=>`<div class="card">${cardSVG('equi', genEquiParams(), i)}</div>`).join('');
+  }
+
+  document.getElementById('redraw').addEventListener('click', renderAll);
+  document.getElementById('chkLen').addEventListener('change', (e)=>{ document.body.classList.toggle('show-lengths', e.target.checked); });
+  document.getElementById('chkAng').addEventListener('change', (e)=>{ document.body.classList.toggle('show-angles', e.target.checked); });
+  document.getElementById('hintBtn').addEventListener('click', ()=>{ document.getElementById('hintContent').classList.toggle('open'); });
+
+  renderAll();
+})();
+
+/* ============================================================
+   PAGE 3 : TIMED DRAWING GAME
+   ============================================================ */
+(function(){
+  const svg = document.getElementById('gameSvg');
+  const VB = 520;
+  const D = 44;
+  const H = D*Math.sqrt(3)/2;
+  const ROUND_TIME = 13;
+  const TOTAL_ROUNDS = 5;
+
+  const startScreen = document.getElementById('gameStartScreen');
+  const playScreen = document.getElementById('gamePlayScreen');
+  const summaryScreen = document.getElementById('gameSummaryScreen');
+  const roundLabel = document.getElementById('gameRoundLabel');
+  const targetLabel = document.getElementById('gameTargetLabel');
+  const timerBarFill = document.getElementById('timerBarFill');
+  const timerNum = document.getElementById('timerNum');
+  const statusBox = document.getElementById('gameStatusBox');
+  const statusTitle = document.getElementById('gameStatusTitle');
+  const statusBody = document.getElementById('gameStatusBody');
+
+  let target = 'iso';
+  let points = [];
+  let timeLeft = ROUND_TIME;
+  let timerId = null;
+  let round = 0;
+  let score = 0;
+  let results = [];
+  let locked = false;
+
+  function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+
+  function snap(x,y){
+    if(target==='iso'){
+      const i = Math.round(x/D), j = Math.round(y/D);
+      return [i*D, j*D];
+    } else {
+      let j = Math.round(y/H);
+      let i = Math.round((x - j*D/2)/D);
+      return [i*D + j*D/2, j*H];
+    }
+  }
+
+  function svgPointFromEvent(evt){
+    const rect = svg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    const x = (clientX - rect.left) / rect.width * VB;
+    const y = (clientY - rect.top) / rect.height * VB;
+    return [x,y];
+  }
+
+  function buildGridDots(){
+    let dots = '';
+    if(target==='iso'){
+      const cols = Math.floor(VB/D);
+      for(let i=0;i<=cols;i++){
+        for(let j=0;j<=cols;j++){
+          const x=i*D, y=j*D;
+          if(x<=VB && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+        }
+      }
+    } else {
+      const rows = Math.floor(VB/H);
+      for(let j=0;j<=rows;j++){
+        const offset = (j%2===0)?0:D/2;
+        const maxI = Math.ceil((VB-offset)/D);
+        for(let i=-1;i<=maxI;i++){
+          const x = i*D+offset, y=j*H;
+          if(x>=-1 && x<=VB+1 && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+        }
+      }
+    }
+    return dots;
+  }
+
+  function checkShape(){
+    if(points.length<3) return {valid:false};
+    const [p0,p1,p2] = points;
+    const area2 = (p1[0]-p0[0])*(p2[1]-p0[1]) - (p2[0]-p0[0])*(p1[1]-p0[1]);
+    if(Math.abs(area2) < D*3) return {valid:false, degenerate:true};
+    const sides = [dist(p0,p1), dist(p1,p2), dist(p2,p0)];
+    const eps = 1.0;
+    const eq01 = Math.abs(sides[0]-sides[1])<eps;
+    const eq12 = Math.abs(sides[1]-sides[2])<eps;
+    const eq20 = Math.abs(sides[2]-sides[0])<eps;
+    const isIso = eq01||eq12||eq20;
+    const isEqui = eq01&&eq12&&eq20;
+    const success = target==='iso' ? isIso : isEqui;
+    return {valid:true, isIso, isEqui, success};
+  }
+
+  function render(){
+    let html = buildGridDots();
+    if(points.length>=2){
+      const n = Math.min(points.length,3);
+      const polyPts = points.slice(0,n).map(p=>p.join(',')).join(' ');
+      let fillCls = 'pending';
+      if(points.length===3){
+        const chk = checkShape();
+        fillCls = chk.valid ? (chk.success?'ok':'bad') : 'bad';
+      }
+      const tag = points.length===3 ? 'polygon' : 'polyline';
+      html += `<${tag} points="${polyPts}" class="draw-fill ${fillCls}" style="stroke:none;"/>`;
+      html += `<${tag} points="${polyPts}" class="draw-line" fill="none"/>`;
+    }
+    points.forEach(p=>{ html += `<circle cx="${p[0]}" cy="${p[1]}" r="5.5" class="draw-point"/>`; });
+    svg.innerHTML = html;
+  }
+
+  function updateInlineStatus(){
+    statusBox.classList.remove('state-ok','state-bad');
+    if(points.length<3){
+      statusTitle.textContent = `점 ${points.length}/3 찍음`;
+      statusBody.textContent = '모눈의 점을 클릭해서 나머지 꼭짓점을 찍어보세요.';
+      return;
+    }
+    const chk = checkShape();
+    if(!chk.valid){
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '삼각형이 아니에요';
+      statusBody.textContent = '세 점이 한 직선 위에 있어요. 다시 찍어보세요.';
+      return;
+    }
+    if(chk.success){
+      statusBox.classList.add('state-ok');
+      statusTitle.textContent = '성공!';
+      statusBody.textContent = target==='iso' ? '두 변의 길이가 같은 이등변삼각형을 완성했어요.' : '세 변의 길이가 모두 같은 정삼각형을 완성했어요.';
+    } else {
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '아직이에요';
+      statusBody.textContent = target==='iso' ? '두 변의 길이가 아직 같지 않아요.' : '세 변의 길이가 아직 모두 같지 않아요.';
+    }
+  }
+
+  function onGridClick(evt){
+    if(locked) return;
+    evt.preventDefault();
+    const [x,y] = svgPointFromEvent(evt);
+    const snapped = snap(x,y);
+    if(snapped[0]<0 || snapped[0]>VB || snapped[1]<0 || snapped[1]>VB) return;
+    if(points.length===3){ points = []; }
+    const last = points[points.length-1];
+    if(last && Math.abs(last[0]-snapped[0])<0.01 && Math.abs(last[1]-snapped[1])<0.01) return;
+    points.push(snapped);
+    render();
+    updateInlineStatus();
+    if(points.length===3){
+      const chk = checkShape();
+      if(chk.valid && chk.success){
+        finishRound(true);
+      }
+    }
+  }
+
+  svg.addEventListener('click', onGridClick);
+  svg.addEventListener('touchstart', onGridClick, {passive:false});
+  document.getElementById('gameClearBtn').addEventListener('click', ()=>{
+    if(locked) return;
+    points = [];
+    render();
+    updateInlineStatus();
+  });
+
+  function startTimer(){
+    timeLeft = ROUND_TIME;
+    updateTimerUI();
+    timerId = setInterval(()=>{
+      timeLeft -= 0.1;
+      if(timeLeft <= 0){
+        timeLeft = 0;
+        updateTimerUI();
+        clearInterval(timerId);
+        const chk = checkShape();
+        finishRound(chk.valid && chk.success);
+        return;
+      }
+      updateTimerUI();
+    }, 100);
+  }
+
+  function updateTimerUI(){
+    const pct = Math.max(0, timeLeft/ROUND_TIME*100);
+    timerBarFill.style.width = pct + '%';
+    timerBarFill.classList.toggle('urgent', timeLeft <= 4);
+    timerNum.textContent = Math.ceil(timeLeft);
+  }
+
+  function finishRound(success){
+    if(locked) return;
+    locked = true;
+    clearInterval(timerId);
+    results.push({ round: round+1, target, success });
+    if(success) score++;
+    statusBox.classList.remove('state-ok','state-bad');
+    statusBox.classList.add(success ? 'state-ok' : 'state-bad');
+    statusTitle.textContent = success ? '이번 문제 성공!' : '시간 종료 — 실패';
+    statusBody.textContent = success
+      ? '정확하게 그렸어요. 다음 문제로 넘어갈게요.'
+      : (target==='iso' ? '이등변삼각형을 완성하지 못했어요. 다음 문제로 넘어갈게요.' : '정삼각형을 완성하지 못했어요. 다음 문제로 넘어갈게요.');
+    setTimeout(()=>{
+      round++;
+      if(round>=TOTAL_ROUNDS){ showSummary(); } else { startRound(); }
+    }, 1400);
+  }
+
+  function startRound(){
+    locked = false;
+    points = [];
+    target = Math.random()<0.5 ? 'iso' : 'equi';
+    roundLabel.textContent = `문제 ${round+1} / ${TOTAL_ROUNDS}`;
+    targetLabel.textContent = target==='iso' ? '이등변삼각형을 그리세요' : '정삼각형을 그리세요';
+    targetLabel.classList.toggle('equi', target==='equi');
+    render();
+    updateInlineStatus();
+    startTimer();
+  }
+
+  function showSummary(){
+    playScreen.style.display = 'none';
+    summaryScreen.style.display = '';
+    document.getElementById('summaryScore').textContent = `5문제 중 ${score}개 성공했어요.`;
+    const list = document.getElementById('summaryList');
+    list.innerHTML = results.map(r=>{
+      const name = r.target==='iso' ? '이등변삼각형' : '정삼각형';
+      const mark = r.success ? '<span class="mark-ok">성공</span>' : '<span class="mark-bad">실패</span>';
+      return `<div class="summary-item"><span>문제 ${r.round} · ${name}</span>${mark}</div>`;
+    }).join('');
+  }
+
+  function startGame(){
+    round = 0; score = 0; results = [];
+    startScreen.style.display = 'none';
+    summaryScreen.style.display = 'none';
+    playScreen.style.display = '';
+    startRound();
+  }
+
+  document.getElementById('gameStartBtn').addEventListener('click', startGame);
+  document.getElementById('gameRestartBtn').addEventListener('click', ()=>{
+    summaryScreen.style.display = 'none';
+    startScreen.style.display = '';
+  });
+})();
+
+/* ============================================================
+   PAGE 4 : DRAG-AND-DROP CLASSIFICATION (acute / right / obtuse)
+   ============================================================ */
+(function(){
+  const CVB = 200;
+  const CPAD = 16;
+  const CATS = ['acute','right','obtuse'];
+  const CAT_NAMES = { acute:'예각삼각형', right:'직각삼각형', obtuse:'둔각삼각형' };
+
+  const tray = document.getElementById('triTray');
+  const zones = {
+    acute: document.getElementById('zoneAcute'),
+    right: document.getElementById('zoneRight'),
+    obtuse: document.getElementById('zoneObtuse')
+  };
+  const zoneEls = Array.from(document.querySelectorAll('#page-4 .zone'));
+  const progressText = document.getElementById('classifyProgress');
+  const completeBanner = document.getElementById('classifyComplete');
+
+  function rnd(min,max){ return Math.random()*(max-min)+min; }
+
+  function randAngles(category){
+    if(category==='acute'){
+      let A,B,C;
+      do{ A=rnd(42,84); B=rnd(42,84); C=180-A-B; } while(C<=16 || C>=88);
+      return [A,B,C];
+    }
+    if(category==='right'){
+      const B = rnd(22,68);
+      const C = 90-B;
+      return [90,B,C];
+    }
+    let A = rnd(96,142);
+    const remain = 180-A;
+    const B = rnd(16, remain-16);
+    const C = remain-B;
+    return [A,B,C];
+  }
+
+  function trianglePoints(A,B,C, baseLen){
+    const rad = d=>d*Math.PI/180;
+    const c = baseLen;
+    const b = c*Math.sin(rad(B))/Math.sin(rad(C));
+    return [ [0,0], [c,0], [b*Math.cos(rad(A)), b*Math.sin(rad(A))] ];
+  }
+
+  function rotatePoints(pts, deg){
+    const rad = deg*Math.PI/180, cs=Math.cos(rad), sn=Math.sin(rad);
+    const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+    const cy = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    return pts.map(([x,y])=>{ const dx=x-cx, dy=y-cy; return [cx+dx*cs-dy*sn, cy+dx*sn+dy*cs]; });
+  }
+
+  function fitFill(pts){
+    const drawable = CVB - CPAD*2;
+    const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+    const w=maxX-minX, h=maxY-minY;
+    const scale = Math.min(drawable/w, drawable/h);
+    const midX=(minX+maxX)/2, midY=(minY+maxY)/2, cx=CVB/2, cy=CVB/2;
+    return pts.map(([x,y])=>[ (x-midX)*scale+cx, (y-midY)*scale+cy ]);
+  }
+
+  function centroidOf(pts){ return [pts.reduce((s,p)=>s+p[0],0)/pts.length, pts.reduce((s,p)=>s+p[1],0)/pts.length]; }
+  function toward(from,to,dist){ const dx=to[0]-from[0], dy=to[1]-from[1]; const len=Math.hypot(dx,dy)||1; return [from[0]+dx/len*dist, from[1]+dy/len*dist]; }
+
+  const ANGLE_COLOR = { acute:'#D64545', right:'#2F9E44', obtuse:'#2F6FD6' };
+  function angleKind(deg){
+    if(deg < 89.5) return 'acute';
+    if(deg > 90.5) return 'obtuse';
+    return 'right';
+  }
+  function angleMarkSVG(vertex, n1, n2, kind){
+    const color = ANGLE_COLOR[kind];
+    const u1x=n1[0]-vertex[0], u1y=n1[1]-vertex[1], l1=Math.hypot(u1x,u1y);
+    const u2x=n2[0]-vertex[0], u2y=n2[1]-vertex[1], l2=Math.hypot(u2x,u2y);
+    if(kind==='right'){
+      const s = 15;
+      const p1 = [vertex[0]+u1x/l1*s, vertex[1]+u1y/l1*s];
+      const p2 = [vertex[0]+u2x/l2*s, vertex[1]+u2y/l2*s];
+      const corner = [p1[0]+u2x/l2*s, p1[1]+u2y/l2*s];
+      return `<path d="M ${p1[0]} ${p1[1]} L ${corner[0]} ${corner[1]} L ${p2[0]} ${p2[1]}" class="angle-color-arc" stroke="${color}" stroke-width="3" fill="none"/>`;
+    }
+    const r = 16;
+    const p1=[vertex[0]+u1x/l1*r, vertex[1]+u1y/l1*r];
+    const p2=[vertex[0]+u2x/l2*r, vertex[1]+u2y/l2*r];
+    const cross=(u1x/l1)*(u2y/l2)-(u1y/l1)*(u2x/l2);
+    const sweep = cross>0 ? 1 : 0;
+    return `<path d="M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 ${sweep} ${p2[0]} ${p2[1]}" class="angle-color-arc" stroke="${color}" stroke-width="3" fill="none"/>`;
+  }
+
+  function buildCardSVG(angles){
+    const [A,B,C] = angles;
+    let pts = trianglePoints(A,B,C, rnd(100,140));
+    pts = rotatePoints(pts, rnd(0,360));
+    pts = fitFill(pts);
+    const centroid = centroidOf(pts);
+    const poly = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="#EFEAE0" stroke="#2B281F" stroke-width="2.6"/>`;
+    const degs = [A,B,C];
+    let labels = '';
+    let arcs = '';
+    pts.forEach((v,i)=>{
+      const pos = toward(v, centroid, 32);
+      labels += `<text x="${pos[0]}" y="${pos[1]}" class="angle-tag">${Math.round(degs[i])}°</text>`;
+      const n1 = pts[(i+1)%3], n2 = pts[(i+2)%3];
+      arcs += angleMarkSVG(v, n1, n2, angleKind(degs[i]));
+    });
+    return `<svg viewBox="0 0 ${CVB} ${CVB}">${poly}${arcs}${labels}</svg>`;
+  }
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+
+  function makeCategoryPlan(){
+    const base = shuffle(['acute','acute','acute','right','right','obtuse','obtuse','obtuse']);
+    return shuffle(base);
+  }
+
+  function updateProgress(){
+    const placed = document.querySelectorAll('#page-4 .tri-card.placed-correct').length;
+    progressText.textContent = `${placed} / 8개 분류 완료`;
+    completeBanner.classList.toggle('show', placed===8);
+  }
+
+  function flash(card, ok){
+    card.classList.add(ok?'flash-ok':'flash-bad');
+    setTimeout(()=>card.classList.remove(ok?'flash-ok':'flash-bad'), 500);
+  }
+
+  function returnToTray(card){
+    card.style.position='static';
+    card.style.left=''; card.style.top=''; card.style.width='';
+    tray.appendChild(card);
+  }
+
+  function placeInZone(card, cat){
+    card.style.position='static';
+    card.style.left=''; card.style.top=''; card.style.width='';
+    zones[cat].appendChild(card);
+    card.classList.add('placed-correct');
+    card.dataset.placed = 'true';
+    updateProgress();
+  }
+
+  function handleDrop(card){
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left+rect.width/2, cy = rect.top+rect.height/2;
+    let target = null;
+    zoneEls.forEach(z=>{
+      const zr = z.getBoundingClientRect();
+      if(cx>=zr.left && cx<=zr.right && cy>=zr.top && cy<=zr.bottom) target = z.dataset.key;
+    });
+    card.classList.remove('dragging');
+    card.style.zIndex = '';
+    if(target){
+      if(target === card.dataset.category){
+        placeInZone(card, target);
+        flash(card, true);
+      } else {
+        flash(card, false);
+        returnToTray(card);
+      }
+    } else {
+      returnToTray(card);
+    }
+  }
+
+  function attachDrag(card){
+    card.addEventListener('pointerdown', (e)=>{
+      if(card.dataset.placed==='true') return;
+      e.preventDefault();
+      const rect = card.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left, offsetY = e.clientY - rect.top;
+      card.setPointerCapture(e.pointerId);
+      card.style.width = rect.width+'px';
+      card.style.position = 'fixed';
+      card.style.left = rect.left+'px';
+      card.style.top = rect.top+'px';
+      card.style.zIndex = 1000;
+      card.classList.add('dragging');
+      document.body.appendChild(card);
+
+      function onMove(ev){
+        card.style.left = (ev.clientX-offsetX)+'px';
+        card.style.top = (ev.clientY-offsetY)+'px';
+      }
+      function onUp(){
+        card.removeEventListener('pointermove', onMove);
+        card.removeEventListener('pointerup', onUp);
+        handleDrop(card);
+      }
+      card.addEventListener('pointermove', onMove);
+      card.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function buildRound(){
+    tray.innerHTML = '';
+    CATS.forEach(k=>{ zones[k].innerHTML = ''; });
+    completeBanner.classList.remove('show');
+    const plan = makeCategoryPlan();
+    plan.forEach(cat=>{
+      const angles = randAngles(cat);
+      const card = document.createElement('div');
+      card.className = 'tri-card';
+      card.dataset.category = cat;
+      card.innerHTML = buildCardSVG(angles);
+      attachDrag(card);
+      tray.appendChild(card);
+    });
+    updateProgress();
+  }
+
+  document.getElementById('classifyResetBtn').addEventListener('click', buildRound);
+  document.getElementById('chkClassifyAngles').addEventListener('change', (e)=>{
+    document.body.classList.toggle('show-classify-angles', e.target.checked);
+  });
+  document.getElementById('chkAngleColor').addEventListener('change', (e)=>{
+    document.body.classList.toggle('show-angle-color', e.target.checked);
+  });
+
+  buildRound();
+})();
+
+/* ============================================================
+   PAGE 5 : DRAW ACUTE / RIGHT / OBTUSE (square grid only)
+   ============================================================ */
+(function(){
+  const svg = document.getElementById('drawSvg5');
+  const VB = 520;
+  const D = 44;
+  const NAMES = { acute:'예각삼각형', right:'직각삼각형', obtuse:'둔각삼각형' };
+
+  let mode = 'acute';
+  let points = [];
+
+  function snap(x,y){
+    const i = Math.round(x/D), j = Math.round(y/D);
+    return [i*D, j*D];
+  }
+  function svgPointFromEvent(evt){
+    const rect = svg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return [ (clientX-rect.left)/rect.width*VB, (clientY-rect.top)/rect.height*VB ];
+  }
+  function buildGridDots(){
+    let dots='';
+    const cols = Math.floor(VB/D);
+    for(let i=0;i<=cols;i++){
+      for(let j=0;j<=cols;j++){
+        const x=i*D, y=j*D;
+        if(x<=VB && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+      }
+    }
+    return dots;
+  }
+  function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+  function sqDist(a,b){ const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; }
+
+  const ANGLE_COLOR = { acute:'#D64545', right:'#2F9E44', obtuse:'#2F6FD6' };
+  function vertexAngleKind(p, o1, o2){
+    const v1x=o1[0]-p[0], v1y=o1[1]-p[1];
+    const v2x=o2[0]-p[0], v2y=o2[1]-p[1];
+    const dot = v1x*v2x+v1y*v2y;
+    if(dot===0) return 'right';
+    return dot>0 ? 'acute' : 'obtuse';
+  }
+  function angleMarkSVG(vertex, n1, n2, kind){
+    const color = ANGLE_COLOR[kind];
+    const u1x=n1[0]-vertex[0], u1y=n1[1]-vertex[1], l1=Math.hypot(u1x,u1y);
+    const u2x=n2[0]-vertex[0], u2y=n2[1]-vertex[1], l2=Math.hypot(u2x,u2y);
+    if(kind==='right'){
+      const s = 17;
+      const p1 = [vertex[0]+u1x/l1*s, vertex[1]+u1y/l1*s];
+      const p2 = [vertex[0]+u2x/l2*s, vertex[1]+u2y/l2*s];
+      const corner = [p1[0]+u2x/l2*s, p1[1]+u2y/l2*s];
+      return `<path d="M ${p1[0]} ${p1[1]} L ${corner[0]} ${corner[1]} L ${p2[0]} ${p2[1]}" stroke="${color}" stroke-width="3" fill="none"/>`;
+    }
+    const r = 19;
+    const p1=[vertex[0]+u1x/l1*r, vertex[1]+u1y/l1*r];
+    const p2=[vertex[0]+u2x/l2*r, vertex[1]+u2y/l2*r];
+    const cross=(u1x/l1)*(u2y/l2)-(u1y/l1)*(u2x/l2);
+    const sweep = cross>0 ? 1 : 0;
+    return `<path d="M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 ${sweep} ${p2[0]} ${p2[1]}" stroke="${color}" stroke-width="3" fill="none"/>`;
+  }
+
+  function classify(){
+    if(points.length<3) return {valid:false};
+    const [p0,p1,p2] = points;
+    const area2 = (p1[0]-p0[0])*(p2[1]-p0[1]) - (p2[0]-p0[0])*(p1[1]-p0[1]);
+    if(Math.abs(area2) < D*D*0.5) return {valid:false, degenerate:true};
+    const s = [sqDist(p0,p1), sqDist(p1,p2), sqDist(p2,p0)].sort((a,b)=>a-b);
+    const max=s[2], sum=s[0]+s[1];
+    let kind;
+    if(max===sum) kind='right';
+    else if(max<sum) kind='acute';
+    else kind='obtuse';
+    return {valid:true, kind};
+  }
+
+  function render(){
+    let html = buildGridDots();
+    if(points.length>=2){
+      const n = Math.min(points.length,3);
+      const polyPts = points.slice(0,n).map(p=>p.join(',')).join(' ');
+      let fillCls = 'pending';
+      if(points.length===3){
+        const chk = classify();
+        fillCls = chk.valid ? (chk.kind===mode?'ok':'bad') : 'bad';
+      }
+      const tag = points.length===3 ? 'polygon' : 'polyline';
+      html += `<${tag} points="${polyPts}" class="draw-fill ${fillCls}" style="stroke:none;"/>`;
+      html += `<${tag} points="${polyPts}" class="draw-line" fill="none"/>`;
+    }
+    points.forEach(p=>{ html += `<circle cx="${p[0]}" cy="${p[1]}" r="5.5" class="draw-point"/>`; });
+
+    if(points.length===3 && document.getElementById('chkAngleColor5').checked){
+      const [p0,p1,p2] = points;
+      const verts = [p0,p1,p2];
+      verts.forEach((v,i)=>{
+        const other1 = verts[(i+1)%3], other2 = verts[(i+2)%3];
+        const kind = vertexAngleKind(v, other1, other2);
+        html += angleMarkSVG(v, other1, other2, kind);
+      });
+    }
+    svg.innerHTML = html;
+    evaluate();
+  }
+
+  function evaluate(){
+    const statusBox = document.getElementById('statusBox5');
+    const statusTitle = document.getElementById('statusTitle5');
+    const statusBody = document.getElementById('statusBody5');
+    statusBox.classList.remove('state-ok','state-bad');
+
+    if(points.length<3){
+      statusTitle.textContent = `점 ${points.length}/3 찍음`;
+      statusBody.innerHTML = `지금은 <b>${NAMES[mode]}</b> 모드예요. 모눈의 점을 클릭해서 나머지 꼭짓점을 찍어보세요.`;
+      return;
+    }
+    const chk = classify();
+    if(!chk.valid){
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '삼각형이 아니에요';
+      statusBody.innerHTML = '세 점이 한 직선 위에 있어요. 다시 찍어보세요.';
+      return;
+    }
+    if(chk.kind===mode){
+      statusBox.classList.add('state-ok');
+      statusTitle.textContent = `${NAMES[mode]}입니다!`;
+      statusBody.innerHTML = mode==='acute' ? '모든 각이 90°보다 작아요. 잘 그렸어요.'
+        : mode==='right' ? '한 각이 정확히 90°예요. 잘 그렸어요.'
+        : '한 각이 90°보다 커요. 잘 그렸어요.';
+    } else {
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = `지금은 ${NAMES[chk.kind]}이에요`;
+      statusBody.innerHTML = `${NAMES[mode]}이 되려면 ` + (
+        mode==='acute' ? '세 각이 모두 90°보다 작아야 해요.' :
+        mode==='right' ? '한 각이 정확히 90°가 되어야 해요.' :
+        '한 각이 90°보다 커야 해요.'
+      );
+    }
+  }
+
+  function onGridClick(evt){
+    evt.preventDefault();
+    const [x,y] = svgPointFromEvent(evt);
+    const snapped = snap(x,y);
+    if(snapped[0]<0 || snapped[0]>VB || snapped[1]<0 || snapped[1]>VB) return;
+    if(points.length===3){ points = []; }
+    const last = points[points.length-1];
+    if(last && Math.abs(last[0]-snapped[0])<0.01 && Math.abs(last[1]-snapped[1])<0.01) return;
+    points.push(snapped);
+    render();
+  }
+
+  svg.addEventListener('click', onGridClick);
+  svg.addEventListener('touchstart', onGridClick, {passive:false});
+  document.getElementById('undoBtn5').addEventListener('click', ()=>{ points.pop(); render(); });
+  document.getElementById('clearBtn5').addEventListener('click', ()=>{ points=[]; render(); });
+  document.getElementById('chkAngleColor5').addEventListener('change', render);
+
+  const btnAcute = document.getElementById('mode5Acute');
+  const btnRight = document.getElementById('mode5Right');
+  const btnObtuse = document.getElementById('mode5Obtuse');
+  function setMode(m){
+    mode = m;
+    points = [];
+    btnAcute.classList.toggle('active', m==='acute');
+    btnRight.classList.toggle('active', m==='right');
+    btnObtuse.classList.toggle('active', m==='obtuse');
+    render();
+  }
+  btnAcute.addEventListener('click', ()=>setMode('acute'));
+  btnRight.addEventListener('click', ()=>setMode('right'));
+  btnObtuse.addEventListener('click', ()=>setMode('obtuse'));
+
+  render();
+})();
+
+/* ============================================================
+   PAGE 6 : TIMED GAME (acute / right / obtuse)
+   ============================================================ */
+(function(){
+  const svg = document.getElementById('game6Svg');
+  const VB = 520;
+  const D = 44;
+  const ROUND_TIME = 13;
+  const TOTAL_ROUNDS = 5;
+  const NAMES = { acute:'예각삼각형', right:'직각삼각형', obtuse:'둔각삼각형' };
+
+  const startScreen = document.getElementById('game6StartScreen');
+  const playScreen = document.getElementById('game6PlayScreen');
+  const summaryScreen = document.getElementById('game6SummaryScreen');
+  const roundLabel = document.getElementById('game6RoundLabel');
+  const targetLabel = document.getElementById('game6TargetLabel');
+  const timerBarFill = document.getElementById('timer6BarFill');
+  const timerNum = document.getElementById('timer6Num');
+  const statusBox = document.getElementById('game6StatusBox');
+  const statusTitle = document.getElementById('game6StatusTitle');
+  const statusBody = document.getElementById('game6StatusBody');
+
+  let target = 'acute';
+  let points = [];
+  let timeLeft = ROUND_TIME;
+  let timerId = null;
+  let round = 0;
+  let score = 0;
+  let results = [];
+  let locked = false;
+  let plan = [];
+
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+  function makeRoundPlan(){
+    const base = ['acute','right','obtuse'];
+    const extra = [ ['acute','right','obtuse'][Math.floor(Math.random()*3)], ['acute','right','obtuse'][Math.floor(Math.random()*3)] ];
+    return shuffle(base.concat(extra));
+  }
+
+  function snap(x,y){ const i=Math.round(x/D), j=Math.round(y/D); return [i*D, j*D]; }
+  function svgPointFromEvent(evt){
+    const rect = svg.getBoundingClientRect();
+    const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+    return [ (clientX-rect.left)/rect.width*VB, (clientY-rect.top)/rect.height*VB ];
+  }
+  function buildGridDots(){
+    let dots='';
+    const cols = Math.floor(VB/D);
+    for(let i=0;i<=cols;i++){
+      for(let j=0;j<=cols;j++){
+        const x=i*D, y=j*D;
+        if(x<=VB && y<=VB) dots += `<circle cx="${x}" cy="${y}" r="2.6" class="grid-dot"/>`;
+      }
+    }
+    return dots;
+  }
+  function sqDist(a,b){ const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; }
+
+  function checkShape(){
+    if(points.length<3) return {valid:false};
+    const [p0,p1,p2] = points;
+    const area2 = (p1[0]-p0[0])*(p2[1]-p0[1]) - (p2[0]-p0[0])*(p1[1]-p0[1]);
+    if(Math.abs(area2) < D*D*0.5) return {valid:false, degenerate:true};
+    const s = [sqDist(p0,p1), sqDist(p1,p2), sqDist(p2,p0)].sort((a,b)=>a-b);
+    const max=s[2], sum=s[0]+s[1];
+    let kind;
+    if(max===sum) kind='right';
+    else if(max<sum) kind='acute';
+    else kind='obtuse';
+    return {valid:true, kind, success: kind===target};
+  }
+
+  function render(){
+    let html = buildGridDots();
+    if(points.length>=2){
+      const n = Math.min(points.length,3);
+      const polyPts = points.slice(0,n).map(p=>p.join(',')).join(' ');
+      let fillCls = 'pending';
+      if(points.length===3){
+        const chk = checkShape();
+        fillCls = chk.valid ? (chk.success?'ok':'bad') : 'bad';
+      }
+      const tag = points.length===3 ? 'polygon' : 'polyline';
+      html += `<${tag} points="${polyPts}" class="draw-fill ${fillCls}" style="stroke:none;"/>`;
+      html += `<${tag} points="${polyPts}" class="draw-line" fill="none"/>`;
+    }
+    points.forEach(p=>{ html += `<circle cx="${p[0]}" cy="${p[1]}" r="5.5" class="draw-point"/>`; });
+    svg.innerHTML = html;
+  }
+
+  function updateInlineStatus(){
+    statusBox.classList.remove('state-ok','state-bad');
+    if(points.length<3){
+      statusTitle.textContent = `점 ${points.length}/3 찍음`;
+      statusBody.textContent = '모눈의 점을 클릭해서 나머지 꼭짓점을 찍어보세요.';
+      return;
+    }
+    const chk = checkShape();
+    if(!chk.valid){
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '삼각형이 아니에요';
+      statusBody.textContent = '세 점이 한 직선 위에 있어요. 다시 찍어보세요.';
+      return;
+    }
+    if(chk.success){
+      statusBox.classList.add('state-ok');
+      statusTitle.textContent = '성공!';
+      statusBody.textContent = `${NAMES[target]}을 완성했어요.`;
+    } else {
+      statusBox.classList.add('state-bad');
+      statusTitle.textContent = '아직이에요';
+      statusBody.textContent = `지금은 ${NAMES[chk.kind]}이에요. ${NAMES[target]}이 되도록 다시 그려보세요.`;
+    }
+  }
+
+  function onGridClick(evt){
+    if(locked) return;
+    evt.preventDefault();
+    const [x,y] = svgPointFromEvent(evt);
+    const snapped = snap(x,y);
+    if(snapped[0]<0 || snapped[0]>VB || snapped[1]<0 || snapped[1]>VB) return;
+    if(points.length===3){ points = []; }
+    const last = points[points.length-1];
+    if(last && Math.abs(last[0]-snapped[0])<0.01 && Math.abs(last[1]-snapped[1])<0.01) return;
+    points.push(snapped);
+    render();
+    updateInlineStatus();
+    if(points.length===3){
+      const chk = checkShape();
+      if(chk.valid && chk.success) finishRound(true);
+    }
+  }
+
+  svg.addEventListener('click', onGridClick);
+  svg.addEventListener('touchstart', onGridClick, {passive:false});
+  document.getElementById('game6ClearBtn').addEventListener('click', ()=>{
+    if(locked) return;
+    points = [];
+    render();
+    updateInlineStatus();
+  });
+
+  function startTimer(){
+    timeLeft = ROUND_TIME;
+    updateTimerUI();
+    timerId = setInterval(()=>{
+      timeLeft -= 0.1;
+      if(timeLeft<=0){
+        timeLeft = 0;
+        updateTimerUI();
+        clearInterval(timerId);
+        const chk = checkShape();
+        finishRound(chk.valid && chk.success);
+        return;
+      }
+      updateTimerUI();
+    }, 100);
+  }
+  function updateTimerUI(){
+    const pct = Math.max(0, timeLeft/ROUND_TIME*100);
+    timerBarFill.style.width = pct + '%';
+    timerBarFill.classList.toggle('urgent', timeLeft<=4);
+    timerNum.textContent = Math.ceil(timeLeft);
+  }
+
+  function finishRound(success){
+    if(locked) return;
+    locked = true;
+    clearInterval(timerId);
+    results.push({ round: round+1, target, success });
+    if(success) score++;
+    statusBox.classList.remove('state-ok','state-bad');
+    statusBox.classList.add(success?'state-ok':'state-bad');
+    statusTitle.textContent = success ? '이번 문제 성공!' : '시간 종료 — 실패';
+    statusBody.textContent = success
+      ? '정확하게 그렸어요. 다음 문제로 넘어갈게요.'
+      : `${NAMES[target]}을 완성하지 못했어요. 다음 문제로 넘어갈게요.`;
+    setTimeout(()=>{
+      round++;
+      if(round>=TOTAL_ROUNDS){ showSummary(); } else { startRound(); }
+    }, 1400);
+  }
+
+  function startRound(){
+    locked = false;
+    points = [];
+    target = plan[round];
+    roundLabel.textContent = `문제 ${round+1} / ${TOTAL_ROUNDS}`;
+    targetLabel.textContent = `${NAMES[target]}을 그리세요`;
+    render();
+    updateInlineStatus();
+    startTimer();
+  }
+
+  function showSummary(){
+    playScreen.style.display = 'none';
+    summaryScreen.style.display = '';
+    document.getElementById('summary6Score').textContent = `5문제 중 ${score}개 성공했어요.`;
+    const list = document.getElementById('summary6List');
+    list.innerHTML = results.map(r=>{
+      const mark = r.success ? '<span class="mark-ok">성공</span>' : '<span class="mark-bad">실패</span>';
+      return `<div class="summary-item"><span>문제 ${r.round} · ${NAMES[r.target]}</span>${mark}</div>`;
+    }).join('');
+  }
+
+  function startGame(){
+    round = 0; score = 0; results = [];
+    plan = makeRoundPlan();
+    startScreen.style.display = 'none';
+    summaryScreen.style.display = 'none';
+    playScreen.style.display = '';
+    startRound();
+  }
+
+  document.getElementById('game6StartBtn').addEventListener('click', startGame);
+  document.getElementById('game6RestartBtn').addEventListener('click', ()=>{
+    summaryScreen.style.display = 'none';
+    startScreen.style.display = '';
+  });
+})();
+
+/* ============================================================
+   PAGE 7 : ANGLE QUIZ GAME (multiple choice, 8 questions x 7s)
+   ============================================================ */
+(function(){
+  const CVB = 240, CPAD = 28;
+  const ROUND_TIME = 7;
+  const TOTAL = 8;
+  const NAMES = { acute:'예각삼각형', right:'직각삼각형', obtuse:'둔각삼각형' };
+  const ANGLE_COLOR = { acute:'#D64545', right:'#2F9E44', obtuse:'#2F6FD6' };
+
+  const startScreen = document.getElementById('classifyGameStart');
+  const playScreen = document.getElementById('classifyGamePlay');
+  const summaryScreen = document.getElementById('classifyGameSummary');
+  const roundLabel = document.getElementById('cgRoundLabel');
+  const timerBarFill = document.getElementById('cgTimerBarFill');
+  const timerNum = document.getElementById('cgTimerNum');
+  const quizSvg = document.getElementById('cgQuizSvg');
+  const statusBox = document.getElementById('cgQuizStatus');
+  const statusTitle = document.getElementById('cgQuizStatusTitle');
+  const answerBtns = Array.from(document.querySelectorAll('#page-7 .answer-btn'));
+  const colorToggle = document.getElementById('chkCgAngleColor');
+
+  let questions = [];
+  let qIndex = 0;
+  let score = 0;
+  let results = [];
+  let timeLeft = ROUND_TIME;
+  let timerId = null;
+  let locked = false;
+
+  function rnd(min,max){ return Math.random()*(max-min)+min; }
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a;
+  }
+
+  function randAngles(category){
+    if(category==='acute'){
+      let A,B,C;
+      do{ A=rnd(42,84); B=rnd(42,84); C=180-A-B; } while(C<=16 || C>=88);
+      return [A,B,C];
+    }
+    if(category==='right'){
+      const B = rnd(22,68);
+      return [90, B, 90-B];
+    }
+    const A = rnd(96,142);
+    const remain = 180-A;
+    const B = rnd(16, remain-16);
+    return [A, B, remain-B];
+  }
+
+  function trianglePoints(A,B,C, baseLen){
+    const rad = d=>d*Math.PI/180;
+    const c = baseLen;
+    const b = c*Math.sin(rad(B))/Math.sin(rad(C));
+    return [ [0,0], [c,0], [b*Math.cos(rad(A)), b*Math.sin(rad(A))] ];
+  }
+  function rotatePoints(pts, deg){
+    const rad = deg*Math.PI/180, cs=Math.cos(rad), sn=Math.sin(rad);
+    const cx = pts.reduce((s,p)=>s+p[0],0)/pts.length;
+    const cy = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    return pts.map(([x,y])=>{ const dx=x-cx, dy=y-cy; return [cx+dx*cs-dy*sn, cy+dx*sn+dy*cs]; });
+  }
+  function fitFill(pts){
+    const drawable = CVB - CPAD*2;
+    const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+    const w=maxX-minX, h=maxY-minY;
+    const scale = Math.min(drawable/w, drawable/h);
+    const midX=(minX+maxX)/2, midY=(minY+maxY)/2, cx=CVB/2, cy=CVB/2;
+    return pts.map(([x,y])=>[ (x-midX)*scale+cx, (y-midY)*scale+cy ]);
+  }
+  function centroidOf(pts){ return [pts.reduce((s,p)=>s+p[0],0)/pts.length, pts.reduce((s,p)=>s+p[1],0)/pts.length]; }
+
+  function angleKind(deg){
+    if(deg < 89.5) return 'acute';
+    if(deg > 90.5) return 'obtuse';
+    return 'right';
+  }
+  function angleMarkSVG(vertex, n1, n2, kind){
+    const color = ANGLE_COLOR[kind];
+    const u1x=n1[0]-vertex[0], u1y=n1[1]-vertex[1], l1=Math.hypot(u1x,u1y);
+    const u2x=n2[0]-vertex[0], u2y=n2[1]-vertex[1], l2=Math.hypot(u2x,u2y);
+    if(kind==='right'){
+      const s = 17;
+      const p1 = [vertex[0]+u1x/l1*s, vertex[1]+u1y/l1*s];
+      const p2 = [vertex[0]+u2x/l2*s, vertex[1]+u2y/l2*s];
+      const corner = [p1[0]+u2x/l2*s, p1[1]+u2y/l2*s];
+      return `<path d="M ${p1[0]} ${p1[1]} L ${corner[0]} ${corner[1]} L ${p2[0]} ${p2[1]}" stroke="${color}" stroke-width="3" fill="none"/>`;
+    }
+    const r = 19;
+    const p1=[vertex[0]+u1x/l1*r, vertex[1]+u1y/l1*r];
+    const p2=[vertex[0]+u2x/l2*r, vertex[1]+u2y/l2*r];
+    const cross=(u1x/l1)*(u2y/l2)-(u1y/l1)*(u2x/l2);
+    const sweep = cross>0 ? 1 : 0;
+    return `<path d="M ${p1[0]} ${p1[1]} A ${r} ${r} 0 0 ${sweep} ${p2[0]} ${p2[1]}" stroke="${color}" stroke-width="3" fill="none"/>`;
+  }
+
+  function toward(from,to,dist){
+    const dx=to[0]-from[0], dy=to[1]-from[1];
+    const len=Math.hypot(dx,dy)||1;
+    return [from[0]+dx/len*dist, from[1]+dy/len*dist];
+  }
+
+  function makeGeometry(angles){
+    const [A,B,C] = angles;
+    let pts = trianglePoints(A,B,C, rnd(110,150));
+    pts = rotatePoints(pts, rnd(0,360));
+    return fitFill(pts);
+  }
+
+  function buildCardSVG(q, showColor){
+    const pts = q.pts, degs = q.angles;
+    const poly = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="#EFEAE0" stroke="#2B281F" stroke-width="2.8"/>`;
+    let marks = '';
+    if(showColor){
+      pts.forEach((v,i)=>{
+        const n1 = pts[(i+1)%3], n2 = pts[(i+2)%3];
+        marks += angleMarkSVG(v, n1, n2, angleKind(degs[i]));
+      });
+    }
+    return `${poly}${marks}`;
+  }
+
+  const CM_PX = 20; // 20 px = 1 cm (for the review screen)
+  function sideLengthsCm(pts){
+    return [0,1,2].map(i=>{
+      const a = pts[i], b = pts[(i+1)%3];
+      return Math.hypot(a[0]-b[0], a[1]-b[1]) / CM_PX;
+    });
+  }
+
+  function buildReviewSVG(q){
+    const pts = q.pts, degs = q.angles;
+    const centroid = centroidOf(pts);
+    let out = `<polygon points="${pts.map(p=>p.join(',')).join(' ')}" fill="#EFEAE0" stroke="#2B281F" stroke-width="2.8"/>`;
+    pts.forEach((v,i)=>{
+      const n1 = pts[(i+1)%3], n2 = pts[(i+2)%3];
+      const kind = angleKind(degs[i]);
+      out += angleMarkSVG(v, n1, n2, kind);
+      const pos = toward(v, centroid, 40);
+      out += `<text x="${pos[0]}" y="${pos[1]}" text-anchor="middle" dominant-baseline="middle" font-size="14" font-weight="700" fill="${ANGLE_COLOR[kind]}">${Math.round(degs[i])}°</text>`;
+    });
+    const lens = sideLengthsCm(pts);
+    for(let i=0;i<3;i++){
+      const a = pts[i], b = pts[(i+1)%3];
+      const mid = [(a[0]+b[0])/2, (a[1]+b[1])/2];
+      const d = Math.hypot(mid[0]-centroid[0], mid[1]-centroid[1]);
+      const pos = toward(centroid, mid, d+15);
+      out += `<text x="${pos[0]}" y="${pos[1]}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="500" fill="#2B281F">${lens[i].toFixed(1)}cm</text>`;
+    }
+    return `<svg viewBox="-26 -26 292 292">${out}</svg>`;
+  }
+
+  function makeQuizPlan(){
+    const counts = shuffle([3,3,2]);
+    const cats = ['acute','right','obtuse'];
+    let plan = [];
+    cats.forEach((c,i)=>{ for(let k=0;k<counts[i];k++) plan.push(c); });
+    return shuffle(plan);
+  }
+
+  function renderCurrentTriangle(){
+    const q = questions[qIndex];
+    quizSvg.innerHTML = buildCardSVG(q, colorToggle.checked);
+  }
+  colorToggle.addEventListener('change', ()=>{
+    if(playScreen.style.display !== 'none' && questions[qIndex]) renderCurrentTriangle();
+  });
+
+  function resetAnswerButtons(){
+    answerBtns.forEach(btn=>{ btn.disabled=false; btn.classList.remove('correct','wrong'); });
+  }
+  function markButtons(selectedAns, correctCat){
+    answerBtns.forEach(btn=>{
+      btn.disabled = true;
+      if(btn.dataset.ans===correctCat) btn.classList.add('correct');
+      else if(btn.dataset.ans===selectedAns) btn.classList.add('wrong');
+    });
+  }
+
+  function updateTimerUI(){
+    const pct = Math.max(0, timeLeft/ROUND_TIME*100);
+    timerBarFill.style.width = pct + '%';
+    timerBarFill.classList.toggle('urgent', timeLeft<=2.5);
+    timerNum.textContent = Math.ceil(timeLeft);
+  }
+  function startTimer(){
+    timeLeft = ROUND_TIME;
+    updateTimerUI();
+    timerId = setInterval(()=>{
+      timeLeft -= 0.1;
+      if(timeLeft<=0){
+        timeLeft = 0;
+        updateTimerUI();
+        clearInterval(timerId);
+        onTimeout();
+        return;
+      }
+      updateTimerUI();
+    }, 100);
+  }
+
+  function onTimeout(){
+    if(locked) return;
+    locked = true;
+    const correctCat = questions[qIndex].category;
+    markButtons(null, correctCat);
+    results.push({ q:qIndex+1, category:correctCat, success:false, selected:null });
+    statusBox.classList.remove('state-ok'); statusBox.classList.add('state-bad');
+    statusTitle.textContent = `시간 종료! 정답은 ${NAMES[correctCat]}이에요.`;
+    setTimeout(nextQuestion, 1300);
+  }
+
+  function onAnswer(ans){
+    if(locked) return;
+    locked = true;
+    clearInterval(timerId);
+    const correctCat = questions[qIndex].category;
+    const isCorrect = ans===correctCat;
+    markButtons(ans, correctCat);
+    if(isCorrect) score++;
+    results.push({ q:qIndex+1, category:correctCat, success:isCorrect, selected:ans });
+    statusBox.classList.remove('state-ok','state-bad');
+    statusBox.classList.add(isCorrect?'state-ok':'state-bad');
+    statusTitle.textContent = isCorrect ? '정답이에요!' : `아쉬워요! 정답은 ${NAMES[correctCat]}이에요.`;
+    setTimeout(nextQuestion, 1300);
+  }
+
+  answerBtns.forEach(btn=> btn.addEventListener('click', ()=> onAnswer(btn.dataset.ans)));
+
+  function startQuestion(){
+    locked = false;
+    resetAnswerButtons();
+    statusBox.classList.remove('state-ok','state-bad');
+    statusTitle.textContent = '보기 중 하나를 선택하세요';
+    roundLabel.textContent = `문제 ${qIndex+1} / ${TOTAL}`;
+    renderCurrentTriangle();
+    startTimer();
+  }
+
+  function nextQuestion(){
+    qIndex++;
+    if(qIndex>=TOTAL) showSummary(); else startQuestion();
+  }
+
+  function showSummary(){
+    playScreen.style.display = 'none';
+    summaryScreen.style.display = '';
+    document.getElementById('cgSummaryDesc').textContent = `8문제 중 ${score}개를 맞혔어요.`;
+    const list = document.getElementById('cgSummaryList');
+    list.innerHTML = results.map(r=>{
+      const mark = r.success ? '<span class="mark-ok">성공</span>' : '<span class="mark-bad">실패</span>';
+      return `<div class="summary-item"><span>문제 ${r.q} · ${NAMES[r.category]}</span>${mark}</div>`;
+    }).join('');
+
+    const grid = document.getElementById('cgReviewGrid');
+    grid.innerHTML = results.map(r=>{
+      const q = questions[r.q-1];
+      const lens = sideLengthsCm(q.pts);
+      const degTxt = q.angles.map(d=>Math.round(d)+'°').join(' · ');
+      const lenTxt = lens.map(l=>l.toFixed(1)).join(' · ');
+      const mine = r.selected ? NAMES[r.selected] : '시간 초과 (선택 못 함)';
+      return `<div class="review-card ${r.success?'ok':'bad'}">
+        <div class="review-head"><b>문제 ${r.q}</b><span class="review-badge">${r.success?'성공':'실패'}</span></div>
+        ${buildReviewSVG(q)}
+        <div class="review-info">정답: <b>${NAMES[r.category]}</b><br>내 답: ${mine}</div>
+        <div class="review-nums">세 각: ${degTxt}<br>세 변: ${lenTxt}cm</div>
+      </div>`;
+    }).join('');
+    grid.style.display = 'none';
+    document.getElementById('cgReviewBtn').textContent = '🔍 오답확인';
+  }
+
+  function startGame(){
+    qIndex = 0; score = 0; results = [];
+    questions = makeQuizPlan().map(cat=>{
+      const angles = randAngles(cat);
+      return { category:cat, angles, pts: makeGeometry(angles) };
+    });
+    startScreen.style.display = 'none';
+    summaryScreen.style.display = 'none';
+    playScreen.style.display = '';
+    startQuestion();
+  }
+
+  document.getElementById('classifyGameStartBtn').addEventListener('click', startGame);
+  document.getElementById('classifyGameRestartBtn').addEventListener('click', ()=>{
+    summaryScreen.style.display = 'none';
+    startScreen.style.display = '';
+  });
+  document.getElementById('cgReviewBtn').addEventListener('click', ()=>{
+    const grid = document.getElementById('cgReviewGrid');
+    const open = grid.style.display === 'none';
+    grid.style.display = open ? '' : 'none';
+    document.getElementById('cgReviewBtn').textContent = open ? '🔍 오답확인 닫기' : '🔍 오답확인';
+  });
+})();
+</script>
+</body>
+</html>
